@@ -1,10 +1,10 @@
-import { BentoSection } from '~/app/(marketing)/_components/sections/bento-section';
-import { CTASection } from '~/app/(marketing)/_components/sections/cta-section';
-import { FAQSection } from '~/app/(marketing)/_components/sections/faq-section';
-import { FooterSection } from '~/app/(marketing)/_components/sections/footer-section';
-import { GrowthSection } from '~/app/(marketing)/_components/sections/growth-section';
-import { HeroSection } from '~/app/(marketing)/_components/sections/hero-section';
-import { Navbar } from '~/app/(marketing)/_components/sections/navbar';
+import { BentoSection } from '~/app/(marketing).backup/_components/sections/bento-section';
+import { CTASection } from '~/app/(marketing).backup/_components/sections/cta-section';
+import { FAQSection } from '~/app/(marketing).backup/_components/sections/faq-section';
+import { FooterSection } from '~/app/(marketing).backup/_components/sections/footer-section';
+import { GrowthSection } from '~/app/(marketing).backup/_components/sections/growth-section';
+import { HeroSection } from '~/app/(marketing).backup/_components/sections/hero-section';
+import { Navbar } from '~/app/(marketing).backup/_components/sections/navbar';
 import { siteConfig } from './_lib/config';
 
 export default function Home() {

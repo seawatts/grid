@@ -1,9 +1,9 @@
 import { cn } from '@seawatts/ui/lib/utils';
 import { Globe } from 'lucide-react';
-import { FirstBentoAnimation } from '~/app/(marketing)/_components/first-bento-animation';
-import { FourthBentoAnimation } from '~/app/(marketing)/_components/fourth-bento-animation';
-import { SecondBentoAnimation } from '~/app/(marketing)/_components/second-bento-animation';
-import { ThirdBentoAnimation } from '~/app/(marketing)/_components/third-bento-animation';
+import { FirstBentoAnimation } from '~/app/(marketing).backup/_components/first-bento-animation';
+import { FourthBentoAnimation } from '~/app/(marketing).backup/_components/fourth-bento-animation';
+import { SecondBentoAnimation } from '~/app/(marketing).backup/_components/second-bento-animation';
+import { ThirdBentoAnimation } from '~/app/(marketing).backup/_components/third-bento-animation';
 import { SecurityShieldBackground } from '../_components/security-shield-background';
 
 export const Highlight = ({

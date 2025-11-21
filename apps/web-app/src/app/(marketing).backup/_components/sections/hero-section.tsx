@@ -2,8 +2,8 @@
 
 import { motion } from 'motion/react';
 import Link from 'next/link';
-import { HeroTerminalSection } from '~/app/(marketing)/_components/sections/hero-terminal-section';
-import { siteConfig } from '~/app/(marketing)/_lib/config';
+import { HeroTerminalSection } from '~/app/(marketing).backup/_components/sections/hero-terminal-section';
+import { siteConfig } from '~/app/(marketing).backup/_lib/config';
 
 const fadeInUpVariants = {
   hidden: { opacity: 0, y: 20 },

@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { SectionHeader } from '~/app/(marketing)/_components/section-header';
-import { siteConfig } from '~/app/(marketing)/_lib/config';
+import { SectionHeader } from '~/app/(marketing).backup/_components/section-header';
+import { siteConfig } from '~/app/(marketing).backup/_lib/config';
 import { PricingCard } from './pricing-card';
 import { PricingTabs } from './pricing-tabs';
 

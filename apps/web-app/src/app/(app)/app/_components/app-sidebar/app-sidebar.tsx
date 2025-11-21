@@ -25,7 +25,7 @@ import {
 } from '@tabler/icons-react';
 import { usePathname } from 'next/navigation';
 import type * as React from 'react';
-import { Icons } from '~/app/(marketing)/_components/icons';
+import { Icons } from '~/app/(marketing).backup/_components/icons';
 import { NavMain } from './nav-main';
 import { NavSecondary } from './nav-secondary';
 import { NavUser } from './nav-user';

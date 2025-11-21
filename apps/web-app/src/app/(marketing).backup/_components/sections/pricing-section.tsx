@@ -3,8 +3,8 @@
 import { cn } from '@seawatts/ui/lib/utils';
 import { motion } from 'motion/react';
 import { useState } from 'react';
-import { SectionHeader } from '~/app/(marketing)/_components/section-header';
-import { siteConfig } from '~/app/(marketing)/_lib/config';
+import { SectionHeader } from '~/app/(marketing).backup/_components/section-header';
+import { siteConfig } from '~/app/(marketing).backup/_lib/config';
 
 interface TabsProps {
   activeTab: 'yearly' | 'monthly';

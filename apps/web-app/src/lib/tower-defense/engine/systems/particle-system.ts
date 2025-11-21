@@ -54,7 +54,7 @@ class ParticlePool {
   private packColor(colorStr: string): number {
     // Parse rgb(r, g, b) format
     const match = colorStr.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
-    if (match) {
+    if (match?.[1] && match?.[2] && match?.[3]) {
       const r = Number.parseInt(match[1], 10);
       const g = Number.parseInt(match[2], 10);
       const b = Number.parseInt(match[3], 10);
@@ -83,10 +83,11 @@ class ParticlePool {
     if (this.freeCount === 0) {
       // Pool exhausted, try to free oldest particle
       let oldestIdx = 0;
-      let oldestLife = this.life[0];
+      let oldestLife = this.life[0] ?? 0;
       for (let i = 1; i < this.activeCount; i++) {
-        if (this.life[i] < oldestLife) {
-          oldestLife = this.life[i];
+        const currentLife = this.life[i] ?? 0;
+        if (currentLife < oldestLife) {
+          oldestLife = currentLife;
           oldestIdx = i;
         }
       }
@@ -96,7 +97,7 @@ class ParticlePool {
     }
 
     // Get index from free list
-    const idx = this.freeIndices[--this.freeCount];
+    const idx = this.freeIndices[--this.freeCount] ?? 0;
 
     // Set particle data
     this.posX[idx] = x;
@@ -110,7 +111,7 @@ class ParticlePool {
 
     this.activeCount = Math.max(this.activeCount, idx + 1);
 
-    return this.ids[idx];
+    return this.ids[idx] ?? 0;
   }
 
   // Update all particles in-place
@@ -118,7 +119,7 @@ class ParticlePool {
     let writeIdx = 0;
 
     for (let readIdx = 0; readIdx < this.activeCount; readIdx++) {
-      const currentLife = this.life[readIdx];
+      const currentLife = this.life[readIdx] ?? 0;
 
       // Skip dead particles
       if (currentLife === 0) continue;
@@ -133,20 +134,24 @@ class ParticlePool {
       }
 
       // Update position and life in-place
-      this.posX[readIdx] += this.velX[readIdx] * gameSpeed;
-      this.posY[readIdx] += this.velY[readIdx] * gameSpeed;
+      const velX = this.velX[readIdx] ?? 0;
+      const velY = this.velY[readIdx] ?? 0;
+      const posX = this.posX[readIdx] ?? 0;
+      const posY = this.posY[readIdx] ?? 0;
+      this.posX[readIdx] = posX + velX * gameSpeed;
+      this.posY[readIdx] = posY + velY * gameSpeed;
       this.life[readIdx] = newLife;
 
       // Compact the active region
       if (writeIdx !== readIdx) {
-        this.posX[writeIdx] = this.posX[readIdx];
-        this.posY[writeIdx] = this.posY[readIdx];
-        this.velX[writeIdx] = this.velX[readIdx];
-        this.velY[writeIdx] = this.velY[readIdx];
-        this.life[writeIdx] = this.life[readIdx];
-        this.maxLife[writeIdx] = this.maxLife[readIdx];
-        this.ids[writeIdx] = this.ids[readIdx];
-        this.colors[writeIdx] = this.colors[readIdx];
+        this.posX[writeIdx] = this.posX[readIdx] ?? 0;
+        this.posY[writeIdx] = this.posY[readIdx] ?? 0;
+        this.velX[writeIdx] = this.velX[readIdx] ?? 0;
+        this.velY[writeIdx] = this.velY[readIdx] ?? 0;
+        this.life[writeIdx] = this.life[readIdx] ?? 0;
+        this.maxLife[writeIdx] = this.maxLife[readIdx] ?? 0;
+        this.ids[writeIdx] = this.ids[readIdx] ?? 0;
+        this.colors[writeIdx] = this.colors[readIdx] ?? 0;
 
         this.life[readIdx] = 0;
       }
@@ -162,19 +167,20 @@ class ParticlePool {
     const result: Particle[] = [];
 
     for (let i = 0; i < this.activeCount; i++) {
-      if (this.life[i] > 0) {
+      const life = this.life[i] ?? 0;
+      if (life > 0) {
         result.push({
-          color: this.unpackColor(this.colors[i]),
-          id: this.ids[i],
-          life: this.life[i],
-          maxLife: this.maxLife[i],
+          color: this.unpackColor(this.colors[i] ?? 0xffffffff),
+          id: this.ids[i] ?? 0,
+          life,
+          maxLife: this.maxLife[i] ?? 0,
           position: {
-            x: this.posX[i],
-            y: this.posY[i],
+            x: this.posX[i] ?? 0,
+            y: this.posY[i] ?? 0,
           },
           velocity: {
-            x: this.velX[i],
-            y: this.velY[i],
+            x: this.velX[i] ?? 0,
+            y: this.velY[i] ?? 0,
           },
         });
       }

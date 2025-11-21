@@ -2,7 +2,7 @@
 
 import { Slider } from '@seawatts/ui/slider';
 import { memo } from 'react';
-import { TEAM_PRICING } from '~/app/(marketing)/_lib/config';
+import { TEAM_PRICING } from '~/app/(marketing).backup/_lib/config';
 
 interface TeamSeatsSliderProps {
   seats: number;

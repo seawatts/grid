@@ -9,9 +9,12 @@ import { Menu, X } from 'lucide-react';
 import { AnimatePresence, motion, useScroll } from 'motion/react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { Icons } from '~/app/(marketing)/_components/icons';
-import { type NavItem, NavMenu } from '~/app/(marketing)/_components/nav-menu';
-import { siteConfig } from '~/app/(marketing)/_lib/config';
+import { Icons } from '~/app/(marketing).backup/_components/icons';
+import {
+  type NavItem,
+  NavMenu,
+} from '~/app/(marketing).backup/_components/nav-menu';
+import { siteConfig } from '~/app/(marketing).backup/_lib/config';
 
 const INITIAL_WIDTH = '70rem';
 const MAX_WIDTH = '900px';

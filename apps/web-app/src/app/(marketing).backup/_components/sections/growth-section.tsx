@@ -1,7 +1,7 @@
 'use client';
 
-import { SectionHeader } from '~/app/(marketing)/_components/section-header';
-import { siteConfig } from '~/app/(marketing)/_lib/config';
+import { SectionHeader } from '~/app/(marketing).backup/_components/section-header';
+import { siteConfig } from '~/app/(marketing).backup/_lib/config';
 
 export function GrowthSection() {
   const { title, description, items } = siteConfig.growthSection;

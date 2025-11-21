@@ -1,5 +1,5 @@
-import { FooterSection } from '~/app/(marketing)/_components/sections/footer-section';
-import { Navbar } from '~/app/(marketing)/_components/sections/navbar';
+import { FooterSection } from '~/app/(marketing).backup/_components/sections/footer-section';
+import { Navbar } from '~/app/(marketing).backup/_components/sections/navbar';
 import { OSSFriendsSection } from './_components/oss-friends-section';
 
 export default function OSSFriendsPage() {

@@ -1,6 +1,6 @@
 import { Feature as FeatureComponent } from '@seawatts/ui/magicui/feature-slideshow';
-import { SectionHeader } from '~/app/(marketing)/_components/section-header';
-import { siteConfig } from '~/app/(marketing)/_lib/config';
+import { SectionHeader } from '~/app/(marketing).backup/_components/section-header';
+import { siteConfig } from '~/app/(marketing).backup/_lib/config';
 
 export function FeatureSection() {
   const { title, description, items } = siteConfig.featureSection;

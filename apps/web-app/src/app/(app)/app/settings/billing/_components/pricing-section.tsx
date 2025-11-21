@@ -1,6 +1,6 @@
 'use client';
 
-import { PricingSection as MarketingPricingSection } from '~/app/(marketing)/_components/sections/pricing-section/pricing-section';
+import { PricingSection as MarketingPricingSection } from '~/app/(marketing).backup/_components/sections/pricing-section/pricing-section';
 
 export function PricingSection() {
   return <MarketingPricingSection />;

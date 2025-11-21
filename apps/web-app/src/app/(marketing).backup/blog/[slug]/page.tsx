@@ -3,8 +3,8 @@ import type { Metadata } from 'next';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
-import { getPost } from '~/app/(marketing)/_lib/blog';
-import { siteConfig } from '~/app/(marketing)/_lib/config';
+import { getPost } from '~/app/(marketing).backup/_lib/blog';
+import { siteConfig } from '~/app/(marketing).backup/_lib/config';
 import Author from '../../_components/blog-author';
 import { CTASection } from '../../_components/sections/cta-section';
 

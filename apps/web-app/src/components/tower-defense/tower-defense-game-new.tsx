@@ -44,6 +44,7 @@ export default function TowerDefenseGame({
   const [showSettings, setShowSettings] = useState(false);
   const [showGrid, setShowGrid] = useState(false);
   const [showUI, setShowUI] = useState(false);
+  const [showPerformanceMonitor, setShowPerformanceMonitor] = useState(false);
   const [debugPaths, setDebugPaths] = useState<Position[][]>([]);
   const [animatedPathLengths, setAnimatedPathLengths] = useState<number[]>([]);
 
@@ -375,6 +376,10 @@ export default function TowerDefenseGame({
           onClose={() => setShowSettings(false)}
           onQuit={() => onQuit?.()}
           onRestart={resetGame}
+          onTogglePerformanceMonitor={() =>
+            setShowPerformanceMonitor(!showPerformanceMonitor)
+          }
+          showPerformanceMonitor={showPerformanceMonitor}
         />
       )}
     </div>

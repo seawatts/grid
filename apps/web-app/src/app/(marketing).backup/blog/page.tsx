@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
-import { getBlogPosts } from '~/app/(marketing)/_lib/blog';
-import { siteConfig } from '~/app/(marketing)/_lib/config';
+import { getBlogPosts } from '~/app/(marketing).backup/_lib/blog';
+import { siteConfig } from '~/app/(marketing).backup/_lib/config';
 import BlogCard from '../_components/blog-card';
 
 export function absoluteUrl(path: string) {

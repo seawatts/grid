@@ -1,5 +1,5 @@
 /* eslint-disable @next/next/no-img-element */
-import { siteConfig } from '~/app/(marketing)/_lib/config';
+import { siteConfig } from '~/app/(marketing).backup/_lib/config';
 
 export function QuoteSection() {
   const { quoteSection } = siteConfig;

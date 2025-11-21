@@ -4,8 +4,8 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@seawatts/ui/accordion';
-import { SectionHeader } from '~/app/(marketing)/_components/section-header';
-import { siteConfig } from '~/app/(marketing)/_lib/config';
+import { SectionHeader } from '~/app/(marketing).backup/_components/section-header';
+import { siteConfig } from '~/app/(marketing).backup/_lib/config';
 
 export function FAQSection() {
   const { faqSection } = siteConfig;

@@ -24,19 +24,25 @@ export class ItemSystem implements GameSystem {
     const gridSize = grid.length;
 
     const powerupBoost =
-      UPGRADES.powerNodePotency.effects[progress.upgrades.powerNodePotency];
+      UPGRADES.powerNodePotency.effects[progress.upgrades.powerNodePotency] ??
+      0;
     const powerupFreq =
-      UPGRADES.powerNodeFrequency.effects[progress.upgrades.powerNodeFrequency];
+      UPGRADES.powerNodeFrequency.effects[
+        progress.upgrades.powerNodeFrequency
+      ] ?? 0;
     const landmineDmg =
-      UPGRADES.landmineDamage.effects[progress.upgrades.landmineDamage];
+      UPGRADES.landmineDamage.effects[progress.upgrades.landmineDamage] ?? 0;
     const landmineFreq =
-      UPGRADES.landmineFrequency.effects[progress.upgrades.landmineFrequency];
+      UPGRADES.landmineFrequency.effects[progress.upgrades.landmineFrequency] ??
+      0;
 
     // Find empty cells
     const emptyCells: Position[] = [];
     for (let y = 0; y < gridSize; y++) {
+      const row = grid[y];
+      if (!row) continue;
       for (let x = 0; x < gridSize; x++) {
-        if (grid[y][x] === 'empty') {
+        if (row[x] === 'empty') {
           // Check if occupied by existing items
           const isOccupied =
             powerups.some((p) => p.position.x === x && p.position.y === y) ||
@@ -55,6 +61,7 @@ export class ItemSystem implements GameSystem {
     for (let i = 0; i < powerupCount && emptyCells.length > 0; i++) {
       const randomIndex = Math.floor(Math.random() * emptyCells.length);
       const pos = emptyCells.splice(randomIndex, 1)[0];
+      if (!pos) continue;
       newPowerups.push({
         boost: powerupBoost,
         id: state.powerupIdCounter + i,
@@ -68,6 +75,7 @@ export class ItemSystem implements GameSystem {
     for (let i = 0; i < landmineCount && emptyCells.length > 0; i++) {
       const randomIndex = Math.floor(Math.random() * emptyCells.length);
       const pos = emptyCells.splice(randomIndex, 1)[0];
+      if (!pos) continue;
       newLandmines.push({
         damage: landmineDmg,
         id: state.landmineIdCounter + i,

@@ -4,8 +4,8 @@ import { ChevronRightIcon } from '@radix-ui/react-icons';
 import { useMediaQuery } from '@seawatts/ui/hooks/use-media-query';
 import { FlickeringGrid } from '@seawatts/ui/magicui/flickering-grid';
 import Link from 'next/link';
-import { Icons } from '~/app/(marketing)/_components/icons';
-import { siteConfig } from '~/app/(marketing)/_lib/config';
+import { Icons } from '~/app/(marketing).backup/_components/icons';
+import { siteConfig } from '~/app/(marketing).backup/_lib/config';
 export function FooterSection() {
   const tablet = useMediaQuery({ query: '(max-width: 1024px)' });
 
