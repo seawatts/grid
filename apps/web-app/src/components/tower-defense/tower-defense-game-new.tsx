@@ -48,7 +48,7 @@ export default function TowerDefenseGame({
   const [showPerformanceMonitor, setShowPerformanceMonitor] = useState(false);
   const [debugPaths, setDebugPaths] = useState<Position[][]>([]);
   const [animatedPathLengths, setAnimatedPathLengths] = useState<number[]>([]);
-  const [touchFeedback, setTouchFeedback] = useState<Position | null>(null);
+  const [touchFeedback, _setTouchFeedback] = useState<Position | null>(null);
 
   // Game store
   const {
