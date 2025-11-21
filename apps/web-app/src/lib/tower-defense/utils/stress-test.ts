@@ -40,7 +40,9 @@ export function setupStressTest(getPool: () => ParticlePool | null) {
         const vy = Math.sin(angle) * speed;
 
         // Random color
-        const color = colors[Math.floor(Math.random() * colors.length)];
+        const color =
+          colors[Math.floor(Math.random() * colors.length)] ??
+          'rgb(0, 255, 255)';
 
         // Spawn with varying lifetimes
         const life = 40 + Math.floor(Math.random() * 40);

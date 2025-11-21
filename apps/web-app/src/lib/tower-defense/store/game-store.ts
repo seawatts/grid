@@ -139,7 +139,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
   addTower: (tower) =>
     set((state) => {
       const newGrid = state.grid.map((row) => [...row]);
-      newGrid[tower.position.y][tower.position.x] = 'tower';
+      const row = newGrid[tower.position.y];
+      if (row) {
+        row[tower.position.x] = 'tower';
+      }
       return {
         grid: newGrid,
         money: state.money - TOWER_STATS[tower.type].cost,
@@ -235,11 +238,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
       .map(() => Array(GRID_SIZE).fill('empty'));
 
     selectedMap.starts.forEach((pos) => {
-      newGrid[pos.y][pos.x] = 'start';
+      const row = newGrid[pos.y];
+      if (row) row[pos.x] = 'start';
     });
 
     selectedMap.goals.forEach((pos) => {
-      newGrid[pos.y][pos.x] = 'goal';
+      const row = newGrid[pos.y];
+      if (row) row[pos.x] = 'goal';
     });
 
     selectedMap.obstacles.forEach((obstacle) => {
@@ -251,7 +256,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
       );
 
       if (!isStart && !isGoal) {
-        newGrid[obstacle.y][obstacle.x] = 'obstacle';
+        const row = newGrid[obstacle.y];
+        if (row) row[obstacle.x] = 'obstacle';
       }
     });
 
@@ -309,7 +315,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
       if (!tower) return state;
 
       const newGrid = state.grid.map((row) => [...row]);
-      newGrid[tower.position.y][tower.position.x] = 'empty';
+      const row = newGrid[tower.position.y];
+      if (row) row[tower.position.x] = 'empty';
 
       return {
         grid: newGrid,

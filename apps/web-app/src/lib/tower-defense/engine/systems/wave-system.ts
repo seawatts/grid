@@ -81,13 +81,17 @@ export class WaveSystem implements GameSystem {
 
       let reward = enemyStats.reward;
       if (state.runUpgrade?.effect.type === 'rewardMult') {
-        reward = Math.floor(reward * (1 + state.runUpgrade.effect.value));
+        reward = Math.floor(reward * (1 + state.runUpgrade.effect.value)) as
+          | 10
+          | 15
+          | 30
+          | 100;
       }
 
       const startIdx = i % state.startPositions.length;
       const startPos = state.startPositions[startIdx];
       const path = pathsForStarts[startIdx];
-      if (!path) continue;
+      if (!path || !startPos) continue;
 
       newEnemies.push({
         health,

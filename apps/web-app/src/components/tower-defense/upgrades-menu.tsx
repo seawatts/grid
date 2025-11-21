@@ -74,12 +74,15 @@ export default function UpgradesMenu({
             const currentLevel =
               progress.upgrades[upgrade.id as UpgradeType] || 0;
             const isMaxed = currentLevel >= upgrade.maxLevel;
-            const nextCost = isMaxed ? 0 : upgrade.costs[currentLevel];
-            const canAfford = progress.techPoints >= nextCost;
+            const nextCost =
+              isMaxed || currentLevel >= upgrade.costs.length
+                ? 0
+                : (upgrade.costs[currentLevel] ?? 0);
+            const canAfford = progress.techPoints >= (nextCost ?? 0);
             const currentEffect = upgrade.effects[currentLevel];
             const nextEffect = isMaxed
               ? null
-              : upgrade.effects[currentLevel + 1];
+              : (upgrade.effects[currentLevel + 1] ?? null);
 
             return (
               <div
@@ -111,7 +114,7 @@ export default function UpgradesMenu({
                         {[...Array(upgrade.maxLevel)].map((_, i) => (
                           <div
                             className={`w-8 h-1.5 rounded-full ${i < currentLevel ? 'bg-cyan-400' : 'bg-gray-700'}`}
-                            key={`${upgrade.type}-level-${i}`}
+                            key={`${upgrade.id}-level-${i}`}
                           />
                         ))}
                       </div>

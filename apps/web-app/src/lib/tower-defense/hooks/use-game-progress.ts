@@ -37,12 +37,14 @@ export function useGameProgress() {
 
   const purchaseUpgrade = (upgradeId: UpgradeType) => {
     const upgrade = UPGRADES[upgradeId];
+    if (!upgrade) return;
+
     const currentLevel = progress.upgrades[upgradeId] || 0;
 
     if (currentLevel >= upgrade.maxLevel) return;
 
     const cost = upgrade.costs[currentLevel];
-    if (progress.techPoints < cost) return;
+    if (!cost || progress.techPoints < cost) return;
 
     setProgress((prev) => ({
       ...prev,

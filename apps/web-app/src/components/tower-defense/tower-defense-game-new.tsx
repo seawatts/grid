@@ -15,6 +15,7 @@ import {
 } from '~/lib/tower-defense/constants/visuals';
 import type {
   PlayerProgress,
+  Position,
   RunUpgrade,
 } from '~/lib/tower-defense/game-types';
 import { useGameControls } from '~/lib/tower-defense/hooks/use-game-controls';
@@ -47,6 +48,7 @@ export default function TowerDefenseGame({
   const [showPerformanceMonitor, setShowPerformanceMonitor] = useState(false);
   const [debugPaths, setDebugPaths] = useState<Position[][]>([]);
   const [animatedPathLengths, setAnimatedPathLengths] = useState<number[]>([]);
+  const [touchFeedback, setTouchFeedback] = useState<Position | null>(null);
 
   // Game store
   const {

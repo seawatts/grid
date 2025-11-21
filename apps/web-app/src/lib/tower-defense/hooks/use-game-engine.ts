@@ -8,8 +8,8 @@ export function useGameEngine(config?: GameConfig) {
   const stateRef = useRef(useGameStore.getState());
 
   // Track initialization to prevent re-initialization on progress changes
-  const lastMapIdRef = useRef<string | undefined>();
-  const lastRunUpgradeRef = useRef<string | undefined>();
+  const lastMapIdRef = useRef<string | undefined>(undefined);
+  const lastRunUpgradeRef = useRef<string | undefined>(undefined);
 
   // Select only state values (not actions) to avoid dependency issues
   const gameStatus = useGameStore((state) => state.gameStatus);

@@ -14,7 +14,7 @@ export default function PerformanceMonitor({
   const [fps, setFps] = useState(60);
   const frameCountRef = useRef(0);
   const lastTimeRef = useRef(Date.now());
-  const animationFrameRef = useRef<number>();
+  const animationFrameRef = useRef<number | undefined>(undefined);
 
   useEffect(() => {
     if (!isEnabled) return;
