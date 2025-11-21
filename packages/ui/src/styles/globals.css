@@ -1,11 +1,19 @@
 @import "tailwindcss";
+@import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
 @source "../../../apps/**/*.{ts,tsx}";
 @source "../**/*.{ts,tsx}";
 
-@plugin "tailwindcss-animate";
 @plugin "@tailwindcss/typography";
+
+@font-face {
+  font-family: "TR2N";
+  src: url("../fonts/tr2n.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
 
 :root {
   --background: oklch(1 0 0);
@@ -141,6 +149,8 @@
   --exitToLeft: exitToLeft 250ms ease;
   --exitToRight: exitToRight 250ms ease;
   --animate-elliptical-orbit: elliptical-orbit 20s linear infinite;
+
+  --font-tron: "TR2N", system-ui, sans-serif;
 
   @keyframes orbit {
     0% {
