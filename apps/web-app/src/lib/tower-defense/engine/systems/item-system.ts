@@ -33,8 +33,9 @@ export class ItemSystem implements GameSystem {
     const landmineDmg =
       UPGRADES.landmineDamage?.effects[progress.upgrades.landmineDamage] ?? 0;
     const landmineFreq =
-      UPGRADES.landmineFrequency?.effects[progress.upgrades.landmineFrequency] ??
-      0;
+      UPGRADES.landmineFrequency?.effects[
+        progress.upgrades.landmineFrequency
+      ] ?? 0;
 
     // Find empty cells
     const emptyCells: Position[] = [];
