@@ -693,21 +693,9 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
                     tickMargin={8}
                   />
                   <ChartTooltip
-                    content={
-                      <ChartTooltipContent
-                        accessibilityLayer
-                        active
-                        coordinate={{ x: 0, y: 0 }}
-                        indicator="dot"
-                        payload={[
-                          {
-                            payload: {
-                              month: 'January',
-                            },
-                          },
-                        ]}
-                      />
-                    }
+                    content={(props) => (
+                      <ChartTooltipContent {...props} indicator="dot" />
+                    )}
                     cursor={false}
                   />
                   <Area
