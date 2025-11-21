@@ -79,10 +79,14 @@ export default function UpgradesMenu({
                 ? 0
                 : (upgrade.costs[currentLevel] ?? 0);
             const canAfford = progress.techPoints >= (nextCost ?? 0);
-            const currentEffect = upgrade.effects[currentLevel];
-            const nextEffect = isMaxed
-              ? null
-              : (upgrade.effects[currentLevel + 1] ?? null);
+            const currentEffect =
+              currentLevel < upgrade.effects.length
+                ? upgrade.effects[currentLevel]
+                : (upgrade.effects.at(-1) ?? 0);
+            const nextEffect =
+              isMaxed || currentLevel + 1 >= upgrade.effects.length
+                ? null
+                : (upgrade.effects[currentLevel + 1] ?? null);
 
             return (
               <div
