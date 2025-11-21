@@ -66,6 +66,10 @@ export class EnemySystem implements GameSystem {
         const next =
           enemy.path[Math.min(currentPathIndex + 1, enemy.path.length - 1)];
 
+        if (!current || !next) {
+          return enemy;
+        }
+
         const newPosition = {
           x: current.x + (next.x - current.x) * progress,
           y: current.y + (next.y - current.y) * progress,

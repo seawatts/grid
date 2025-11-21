@@ -166,5 +166,12 @@ export function validateMap(map: GameMap): boolean {
 
 export function getMapById(id: string): GameMap {
   const map = GAME_MAPS.find((m) => m.id === id);
-  return map || GAME_MAPS[0];
+  if (!map) {
+    const defaultMap = GAME_MAPS[0];
+    if (!defaultMap) {
+      throw new Error('No maps available');
+    }
+    return defaultMap;
+  }
+  return map;
 }

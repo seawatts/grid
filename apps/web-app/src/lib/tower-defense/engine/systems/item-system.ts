@@ -24,16 +24,16 @@ export class ItemSystem implements GameSystem {
     const gridSize = grid.length;
 
     const powerupBoost =
-      UPGRADES.powerNodePotency.effects[progress.upgrades.powerNodePotency] ??
+      UPGRADES.powerNodePotency?.effects[progress.upgrades.powerNodePotency] ??
       0;
     const powerupFreq =
-      UPGRADES.powerNodeFrequency.effects[
+      UPGRADES.powerNodeFrequency?.effects[
         progress.upgrades.powerNodeFrequency
       ] ?? 0;
     const landmineDmg =
-      UPGRADES.landmineDamage.effects[progress.upgrades.landmineDamage] ?? 0;
+      UPGRADES.landmineDamage?.effects[progress.upgrades.landmineDamage] ?? 0;
     const landmineFreq =
-      UPGRADES.landmineFrequency.effects[progress.upgrades.landmineFrequency] ??
+      UPGRADES.landmineFrequency?.effects[progress.upgrades.landmineFrequency] ??
       0;
 
     // Find empty cells

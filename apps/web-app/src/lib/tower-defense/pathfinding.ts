@@ -162,7 +162,7 @@ export function findPathsForMultipleStartsAndGoals(
   // Return the assigned paths
   return starts.map((_start, idx) => {
     const assignedGoalIdx = startAssignments[idx];
-    if (assignedGoalIdx === -1) return null;
+    if (assignedGoalIdx === undefined || assignedGoalIdx === -1) return null;
     const paths = pathMatrix[idx];
     if (!paths) return null;
     return paths[assignedGoalIdx] ?? null;
