@@ -70,6 +70,7 @@ export function useGameEngine(config?: GameConfig) {
     if (updates.score !== undefined)
       store.addScore(updates.score - stateRef.current.score);
     if (updates.combo !== undefined) store.setCombo(updates.combo);
+    if (updates.wave !== undefined) store.setWave(updates.wave);
     if (updates.isWaveActive !== undefined)
       store.setIsWaveActive(updates.isWaveActive);
     if (updates.gameStatus !== undefined)
@@ -78,6 +79,12 @@ export function useGameEngine(config?: GameConfig) {
       store.updateLastKillTime(updates.lastKillTime);
     if (updates.projectileIdCounter !== undefined)
       store.setProjectileIdCounter(updates.projectileIdCounter);
+    if (updates.enemyIdCounter !== undefined)
+      store.setEnemyIdCounter(updates.enemyIdCounter);
+    if (updates.powerupIdCounter !== undefined)
+      store.setPowerupIdCounter(updates.powerupIdCounter);
+    if (updates.landmineIdCounter !== undefined)
+      store.setLandmineIdCounter(updates.landmineIdCounter);
   }, []); // Empty dependencies - we use getState() inside
 
   // Initialize engine
@@ -122,14 +129,34 @@ export function useGameEngine(config?: GameConfig) {
     handleStateUpdate(updates);
   }, [handleStateUpdate]);
 
+  const generateItems = useCallback(() => {
+    if (!engineRef.current) return;
+
+    const updates = engineRef.current.generateItems(stateRef.current, 1, true);
+    handleStateUpdate(updates);
+  }, [handleStateUpdate]);
+
   const resetGame = useCallback(() => {
     if (config) {
       useGameStore.getState().initializeGame(config);
     }
   }, [config]);
 
+  // Generate initial items when game starts (wave 0 -> wave 1)
+  useEffect(() => {
+    if (config && engineRef.current) {
+      // Generate items for wave 1 on initialization
+      generateItems();
+    }
+  }, [
+    config?.mapId, // Generate items for wave 1 on initialization
+    generateItems,
+    config,
+  ]); // Only run when map changes
+
   return {
     engine: engineRef.current,
+    generateItems,
     resetGame,
     startWave,
   };

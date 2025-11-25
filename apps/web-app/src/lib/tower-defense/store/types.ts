@@ -55,6 +55,7 @@ export interface GameState {
   autoAdvance: boolean;
   showGrid: boolean;
   showPerformanceMonitor: boolean;
+  showDamageNumbers: boolean;
 
   // Counters
   towerIdCounter: number;
@@ -95,6 +96,9 @@ export interface SystemUpdateResult {
   projectileIdCounter?: number;
   particleIdCounter?: number;
   damageNumberIdCounter?: number;
+  enemyIdCounter?: number;
+  powerupIdCounter?: number;
+  landmineIdCounter?: number;
 }
 
 export interface GameSystem {

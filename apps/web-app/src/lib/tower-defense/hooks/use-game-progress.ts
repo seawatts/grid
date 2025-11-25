@@ -1,21 +1,14 @@
 import { useEffect, useState } from 'react';
+import { DEFAULT_PROGRESS, withProgressDefaults } from '../constants/progress';
 import { UPGRADES } from '../constants/upgrades';
 import type { PlayerProgress, UpgradeType } from '../game-types';
-
-const DEFAULT_PROGRESS: PlayerProgress = {
-  techPoints: 0,
-  upgrades: {
-    landmineDamage: 0,
-    landmineFrequency: 0,
-    powerNodeFrequency: 0,
-    powerNodePotency: 0,
-  },
-};
 
 const STORAGE_KEY = 'grid_defense_progress';
 
 export function useGameProgress() {
-  const [progress, setProgress] = useState<PlayerProgress>(DEFAULT_PROGRESS);
+  const [progress, setProgress] = useState<PlayerProgress>(
+    withProgressDefaults(DEFAULT_PROGRESS),
+  );
 
   // Load progress from localStorage on mount
   useEffect(() => {
@@ -23,7 +16,8 @@ export function useGameProgress() {
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        setProgress({ ...DEFAULT_PROGRESS, ...parsed });
+        const normalized = withProgressDefaults(parsed);
+        setProgress(normalized);
       } catch (e) {
         console.error('Failed to load progress', e);
       }

@@ -58,6 +58,7 @@ export class TowerSystem implements GameSystem {
         position: { ...tower.position },
         sourcePosition: { ...tower.position },
         target: { ...target.position },
+        targetEnemyId: target.id,
         type: tower.type,
       });
     }

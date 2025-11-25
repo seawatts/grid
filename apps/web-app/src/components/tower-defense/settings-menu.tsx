@@ -1,7 +1,7 @@
 'use client';
 
 import { Button } from '@seawatts/ui/button';
-import { Activity, LogOut, RotateCcw, X } from 'lucide-react';
+import { Activity, Hash, LogOut, RotateCcw, X } from 'lucide-react';
 
 export default function SettingsMenu({
   onRestart,
@@ -9,18 +9,26 @@ export default function SettingsMenu({
   onClose,
   showPerformanceMonitor,
   onTogglePerformanceMonitor,
+  showDamageNumbers,
+  onToggleDamageNumbers,
 }: {
   onRestart: () => void;
   onQuit: () => void;
   onClose: () => void;
   showPerformanceMonitor: boolean;
   onTogglePerformanceMonitor: () => void;
+  showDamageNumbers: boolean;
+  onToggleDamageNumbers: () => void;
 }) {
   return (
-    <button
+    <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-300"
       onClick={onClose}
-      type="button"
+      onKeyDown={(e) => {
+        if (e.key === 'Escape') {
+          onClose();
+        }
+      }}
     >
       <div
         className="relative bg-black border-2 border-cyan-400 rounded-lg p-6 max-w-sm w-full animate-in zoom-in duration-300"
@@ -70,6 +78,23 @@ export default function SettingsMenu({
           </Button>
 
           <Button
+            className={`w-full ${
+              showDamageNumbers
+                ? 'bg-green-500/30 hover:bg-green-500/40 text-green-400 border-2 border-green-400'
+                : 'bg-gray-500/20 hover:bg-gray-500/40 text-gray-400 border-2 border-gray-400'
+            } h-12 text-base font-bold active:scale-95 transition-all flex items-center justify-center gap-2`}
+            onClick={onToggleDamageNumbers}
+            style={{
+              boxShadow: showDamageNumbers
+                ? '0 0 15px rgba(34, 197, 94, 0.3)'
+                : '0 0 15px rgba(156, 163, 175, 0.3)',
+            }}
+          >
+            <Hash className="w-5 h-5" />
+            {showDamageNumbers ? 'HIDE' : 'SHOW'} DAMAGE NUMBERS
+          </Button>
+
+          <Button
             className="w-full bg-purple-500/20 hover:bg-purple-500/40 text-purple-400 border-2 border-purple-400 h-12 text-base font-bold active:scale-95 transition-all flex items-center justify-center gap-2"
             onClick={() => {
               onRestart();
@@ -102,6 +127,6 @@ export default function SettingsMenu({
           </Button>
         </div>
       </div>
-    </button>
+    </div>
   );
 }

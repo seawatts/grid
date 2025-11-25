@@ -11,17 +11,32 @@ export class ProjectileSystem implements GameSystem {
     _deltaTime: number,
     _timestamp: number,
   ): SystemUpdateResult {
-    const { projectiles } = state;
+    const { projectiles, spawnedEnemies } = state;
 
-    const updatedProjectiles = projectiles.map(
-      (p): Projectile => ({
-        ...p,
-        position: {
-          x: p.position.x + (p.target.x - p.position.x) * 0.3,
-          y: p.position.y + (p.target.y - p.position.y) * 0.3,
-        },
-      }),
+    const enemiesById = new Map(
+      spawnedEnemies.map((enemy) => [enemy.id, enemy]),
     );
+
+    const updatedProjectiles = projectiles.map((projectile): Projectile => {
+      const trackedEnemy =
+        projectile.targetEnemyId !== undefined
+          ? enemiesById.get(projectile.targetEnemyId)
+          : undefined;
+      const targetPosition = trackedEnemy?.position ?? projectile.target;
+
+      return {
+        ...projectile,
+        position: {
+          x:
+            projectile.position.x +
+            (targetPosition.x - projectile.position.x) * 0.3,
+          y:
+            projectile.position.y +
+            (targetPosition.y - projectile.position.y) * 0.3,
+        },
+        target: trackedEnemy ? { ...trackedEnemy.position } : projectile.target,
+      };
+    });
 
     return {
       projectiles: updatedProjectiles,

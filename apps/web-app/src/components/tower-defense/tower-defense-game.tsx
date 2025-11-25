@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { Drawer, DrawerContent } from '@seawatts/ui/drawer';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import GameBoard from '~/components/tower-defense/game-board';
 import GameControls from '~/components/tower-defense/game-controls';
 import GameStats from '~/components/tower-defense/game-stats';
@@ -21,6 +22,7 @@ import type {
 } from '~/lib/tower-defense/game-types';
 import { useGameControls } from '~/lib/tower-defense/hooks/use-game-controls';
 import { useGameEngine } from '~/lib/tower-defense/hooks/use-game-engine';
+import { useGameStatePersistence } from '~/lib/tower-defense/hooks/use-game-state-persistence';
 import { findPathsForMultipleStartsAndGoals } from '~/lib/tower-defense/pathfinding';
 import { useGameStore } from '~/lib/tower-defense/store/game-store';
 import { setupStressTest } from '~/lib/tower-defense/utils/stress-test';
@@ -29,6 +31,7 @@ interface TowerDefenseGameProps {
   mapId: string;
   runUpgrade?: RunUpgrade;
   isEntering?: boolean;
+  isResuming?: boolean;
   onQuit?: () => void;
   progress: PlayerProgress;
   onEarnTP: (amount: number) => void;
@@ -38,6 +41,7 @@ export default function TowerDefenseGame({
   mapId,
   runUpgrade,
   isEntering = false,
+  isResuming = false,
   onQuit,
   progress,
 }: TowerDefenseGameProps) {
@@ -74,6 +78,7 @@ export default function TowerDefenseGame({
     gameSpeed,
     autoAdvance,
     showPerformanceMonitor,
+    showDamageNumbers,
     startPositions,
     goalPositions,
     obstacles,
@@ -84,7 +89,14 @@ export default function TowerDefenseGame({
     cycleGameSpeed,
     toggleAutoAdvance,
     togglePerformanceMonitor,
+    toggleDamageNumbers,
+    getSaveableState,
+    loadSavedState,
   } = useGameStore();
+
+  // Persistence
+  const { saveGame, loadGame, clearSavedGame } = useGameStatePersistence();
+  const hasLoadedSavedState = useRef(false);
 
   // Memoize config to prevent re-initialization
   // Only re-initialize when map or runUpgrade changes, not when progress changes mid-game
@@ -103,6 +115,12 @@ export default function TowerDefenseGame({
   // Game controls
   const { handleCellClick, upgradeTower, deleteTower } = useGameControls();
 
+  const closeDetailPanels = () => {
+    setSelectedTower(null);
+    setSelectedItem(null);
+  };
+  const hasDetailSelection = Boolean(selectedTower || selectedItem);
+
   // Setup stress test for performance testing (dev only)
   useEffect(() => {
     if (!engine || process.env.NODE_ENV !== 'development') return;
@@ -110,6 +128,39 @@ export default function TowerDefenseGame({
     const cleanup = setupStressTest(() => engine.getParticlePool());
     return cleanup;
   }, [engine]);
+
+  // Load saved state when resuming
+  useEffect(() => {
+    if (isResuming && !hasLoadedSavedState.current) {
+      const savedState = loadGame();
+      if (savedState) {
+        loadSavedState(savedState, mapId);
+        hasLoadedSavedState.current = true;
+      }
+    }
+  }, [isResuming, loadGame, loadSavedState, mapId]);
+
+  // Auto-save game state periodically
+  useEffect(() => {
+    if (gameStatus !== 'playing') return;
+
+    const interval = setInterval(() => {
+      const state = getSaveableState();
+      saveGame({
+        ...state,
+        mapId,
+      });
+    }, 5000); // Save every 5 seconds
+
+    return () => clearInterval(interval);
+  }, [gameStatus, getSaveableState, saveGame, mapId]);
+
+  // Clear saved state when game ends
+  useEffect(() => {
+    if (gameStatus === 'won' || gameStatus === 'lost') {
+      clearSavedGame();
+    }
+  }, [gameStatus, clearSavedGame]);
 
   // Handle entering animation
   useEffect(() => {
@@ -334,6 +385,7 @@ export default function TowerDefenseGame({
               powerups={powerups}
               projectiles={projectiles}
               selectedTower={selectedTower}
+              showDamageNumbers={showDamageNumbers}
               startPositions={startPositions}
               touchFeedback={null}
               towers={towers}
@@ -345,20 +397,11 @@ export default function TowerDefenseGame({
           className={`transition-all duration-700 mb-2 ${showUI ? 'opacity-100' : 'opacity-0'}`}
           style={{ transitionDelay: '500ms' }}
         >
-          {selectedTower ? (
-            <TowerManagement
-              money={money}
-              onClose={() => setSelectedTower(null)}
-              onDelete={deleteTower}
-              onUpgrade={upgradeTower}
-              tower={selectedTower}
-            />
-          ) : selectedItem ? (
-            <ItemDetails
-              item={selectedItem}
-              onClose={() => setSelectedItem(null)}
-            />
-          ) : (
+          <div
+            className={
+              hasDetailSelection ? 'invisible pointer-events-none' : ''
+            }
+          >
             <TowerSelector
               gameStatus={gameStatus}
               isMobile={isMobile}
@@ -374,7 +417,7 @@ export default function TowerDefenseGame({
               }}
               selectedTowerType={selectedTowerType}
             />
-          )}
+          </div>
         </div>
 
         <div
@@ -387,12 +430,40 @@ export default function TowerDefenseGame({
         </div>
       </div>
 
+      <Drawer
+        direction="bottom"
+        onOpenChange={(open) => {
+          if (!open) {
+            closeDetailPanels();
+          }
+        }}
+        open={hasDetailSelection}
+      >
+        <DrawerContent className="border-t border-cyan-500/30 bg-black/95 text-white shadow-[0_0_45px_rgba(34,211,238,0.35)] backdrop-blur-lg [&>div:first-child]:hidden">
+          <div className="mx-auto w-full max-w-md">
+            {selectedTower ? (
+              <TowerManagement
+                money={money}
+                onClose={closeDetailPanels}
+                onDelete={deleteTower}
+                onUpgrade={upgradeTower}
+                tower={selectedTower}
+              />
+            ) : selectedItem ? (
+              <ItemDetails item={selectedItem} onClose={closeDetailPanels} />
+            ) : null}
+          </div>
+        </DrawerContent>
+      </Drawer>
+
       {showSettings && (
         <SettingsMenu
           onClose={() => setShowSettings(false)}
           onQuit={() => onQuit?.()}
           onRestart={resetGame}
+          onToggleDamageNumbers={toggleDamageNumbers}
           onTogglePerformanceMonitor={togglePerformanceMonitor}
+          showDamageNumbers={showDamageNumbers}
           showPerformanceMonitor={showPerformanceMonitor}
         />
       )}

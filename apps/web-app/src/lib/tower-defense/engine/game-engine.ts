@@ -1,6 +1,11 @@
 import { MAX_WAVES } from '../constants/balance';
 import type { GameState, SystemUpdateResult } from '../store/types';
 import { shouldResetCombo } from '../utils/calculations';
+import {
+  ensurePowerupFields,
+  getPowerupLifetime,
+  hasTowerOnPowerup,
+} from '../utils/powerups';
 import { CollisionSystem } from './systems/collision-system';
 import { EnemySystem } from './systems/enemy-system';
 import { ItemSystem } from './systems/item-system';
@@ -118,11 +123,23 @@ export class GameEngine {
     );
     currentState = { ...state, ...updates };
 
+    // Track if wave was active before this update
+    const wasWaveActive = currentState.isWaveActive;
+
     this.applySystemUpdate(
       updates,
       this.waveSystem.update(currentState, deltaTime, timestamp),
     );
     currentState = { ...state, ...updates };
+
+    // If wave just completed, generate items for next wave
+    if (wasWaveActive && updates.isWaveActive === false) {
+      this.applySystemUpdate(
+        updates,
+        this.itemSystem.generateWaveItems(currentState, 1, false),
+      );
+      currentState = { ...state, ...updates };
+    }
 
     this.applySystemUpdate(
       updates,
@@ -167,26 +184,32 @@ export class GameEngine {
 
   /**
    * Public method to start a new wave
+   * NOTE: Items should be generated separately BEFORE starting the wave
+   * so players can see them and plan their strategy
    */
   startWave(state: GameState): SystemUpdateResult {
     const waveUpdates = this.waveSystem.startWave(state, Date.now());
-
-    // Also generate items for the wave
-    const updatedState = { ...state, ...waveUpdates };
-    const itemUpdates = this.itemSystem.generateWaveItems(updatedState, 1);
+    const started = waveUpdates.isWaveActive === true;
+    const nextWave = started ? state.wave + 1 : state.wave;
+    const powerupUpdates = started ? this.applyPowerupDecay(state) : undefined;
 
     return {
       ...waveUpdates,
-      ...itemUpdates,
-      wave: state.wave + 1,
+      ...(powerupUpdates ? { powerups: powerupUpdates } : {}),
+      wave: nextWave,
     };
   }
 
   /**
-   * Public method to generate items
+   * Public method to generate items for the next wave
+   * Should be called when a wave completes, BEFORE the next wave starts
    */
-  generateItems(state: GameState, count = 1): SystemUpdateResult {
-    return this.itemSystem.generateWaveItems(state, count);
+  generateItems(
+    state: GameState,
+    count = 1,
+    clearExisting = true,
+  ): SystemUpdateResult {
+    return this.itemSystem.generateWaveItems(state, count, clearExisting);
   }
 
   /**
@@ -194,5 +217,26 @@ export class GameEngine {
    */
   getParticlePool() {
     return this.particleSystem.getPool();
+  }
+
+  private applyPowerupDecay(state: GameState) {
+    const lifetime = getPowerupLifetime(state.progress);
+
+    return state.powerups
+      .map((powerup) => ensurePowerupFields(powerup, lifetime))
+      .map((powerup) => {
+        const bound = hasTowerOnPowerup(powerup, state.towers);
+        if (bound) {
+          return { ...powerup, isTowerBound: true };
+        }
+
+        const remaining = Math.max(powerup.remainingWaves - 1, 0);
+        return {
+          ...powerup,
+          isTowerBound: false,
+          remainingWaves: remaining,
+        };
+      })
+      .filter((powerup) => powerup.isTowerBound || powerup.remainingWaves > 0);
   }
 }

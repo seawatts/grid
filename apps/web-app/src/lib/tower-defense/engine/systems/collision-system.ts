@@ -102,6 +102,7 @@ export class CollisionSystem implements GameSystem {
 
     const result: SystemUpdateResult = {
       landmines: newLandmines,
+      projectiles: projectileCollisionResult.projectiles,
       spawnedEnemies: newEnemies,
     };
 
@@ -287,12 +288,15 @@ export class CollisionSystem implements GameSystem {
 
       if (!tower) continue;
 
-      // Find target enemy at projectile's target position
-      const targetEnemy = newEnemies.find(
-        (e) =>
-          Math.abs(e.position.x - projectile.target.x) < 0.5 &&
-          Math.abs(e.position.y - projectile.target.y) < 0.5,
-      );
+      // Find target enemy either by tracking ID or fallback to position match
+      const targetEnemy =
+        projectile.targetEnemyId !== undefined
+          ? newEnemies.find((e) => e.id === projectile.targetEnemyId)
+          : newEnemies.find(
+              (e) =>
+                Math.abs(e.position.x - projectile.target.x) < 0.5 &&
+                Math.abs(e.position.y - projectile.target.y) < 0.5,
+            );
 
       if (!targetEnemy) continue;
 

@@ -5,6 +5,7 @@ import type {
   GameSystem,
   SystemUpdateResult,
 } from '../../store/types';
+import { ensurePowerupFields, getPowerupLifetime } from '../../utils/powerups';
 
 export class ItemSystem implements GameSystem {
   update(
@@ -18,9 +19,23 @@ export class ItemSystem implements GameSystem {
 
   /**
    * Generate items for a new wave
+   * @param state - Current game state
+   * @param count - Multiplier for item count
+   * @param clearExisting - If true, clears existing items before generating new ones
    */
-  generateWaveItems(state: GameState, count = 1): SystemUpdateResult {
-    const { grid, powerups, landmines, progress } = state;
+  generateWaveItems(
+    state: GameState,
+    count = 1,
+    clearExisting = false,
+  ): SystemUpdateResult {
+    const { grid, progress } = state;
+    const powerupLifetime = getPowerupLifetime(state.progress);
+    const powerups = clearExisting
+      ? []
+      : state.powerups.map((powerup) =>
+          ensurePowerupFields(powerup, powerupLifetime),
+        );
+    const landmines = clearExisting ? [] : state.landmines;
     const gridSize = grid.length;
 
     const powerupBoost =
@@ -66,7 +81,9 @@ export class ItemSystem implements GameSystem {
       newPowerups.push({
         boost: powerupBoost,
         id: state.powerupIdCounter + i,
+        isTowerBound: false,
         position: pos,
+        remainingWaves: powerupLifetime,
       });
     }
 
@@ -85,7 +102,9 @@ export class ItemSystem implements GameSystem {
     }
 
     return {
+      landmineIdCounter: state.landmineIdCounter + newLandmines.length,
       landmines: [...landmines, ...newLandmines],
+      powerupIdCounter: state.powerupIdCounter + newPowerups.length,
       powerups: [...powerups, ...newPowerups],
     };
   }

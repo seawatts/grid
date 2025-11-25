@@ -109,6 +109,7 @@ export class WaveSystem implements GameSystem {
     }
 
     return {
+      enemyIdCounter: state.enemyIdCounter + newEnemies.length,
       isWaveActive: true,
       unspawnedEnemies: [...state.unspawnedEnemies, ...newEnemies],
     };

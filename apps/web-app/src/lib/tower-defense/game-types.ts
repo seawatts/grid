@@ -29,6 +29,7 @@ export type Projectile = {
   position: Position;
   sourcePosition: Position;
   target: Position;
+  targetEnemyId?: number;
   type: TowerType;
 };
 
@@ -53,6 +54,8 @@ export type PowerUp = {
   id: number;
   position: Position;
   boost: number; // Damage multiplier (e.g., 1.5 or 2.0)
+  remainingWaves: number;
+  isTowerBound: boolean;
 };
 
 export type Landmine = {
@@ -64,10 +67,11 @@ export type Landmine = {
 export type UpgradeType =
   | 'powerNodePotency'
   | 'powerNodeFrequency'
+  | 'powerNodePersistence'
   | 'landmineDamage'
   | 'landmineFrequency';
 
-export type UpgradeLevel = 0 | 1 | 2 | 3;
+export type UpgradeLevel = 0 | 1 | 2 | 3 | 4;
 
 export type UpgradeConfig = {
   id: UpgradeType;

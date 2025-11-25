@@ -5,6 +5,10 @@ import {
   START_MONEY,
   TOWER_STATS,
 } from '../constants/balance';
+import {
+  createDefaultProgress,
+  withProgressDefaults,
+} from '../constants/progress';
 import { getMapById } from '../game-maps';
 import type {
   Landmine,
@@ -13,6 +17,8 @@ import type {
   Tower,
   TowerType,
 } from '../game-types';
+import type { SavedGameState } from '../hooks/use-game-state-persistence';
+import { hasTowerOnPowerup } from '../utils/powerups';
 import type { GameConfig, GameState } from './types';
 
 const createInitialState = (): GameState => ({
@@ -37,21 +43,14 @@ const createInitialState = (): GameState => ({
   particles: [],
   powerupIdCounter: 0,
   powerups: [],
-  progress: {
-    techPoints: 0,
-    upgrades: {
-      landmineDamage: 0,
-      landmineFrequency: 0,
-      powerNodeFrequency: 0,
-      powerNodePotency: 0,
-    },
-  },
+  progress: createDefaultProgress(),
   projectileIdCounter: 0,
   projectiles: [],
   score: 0,
   selectedItem: null,
   selectedTower: null,
   selectedTowerType: null,
+  showDamageNumbers: true,
   showGrid: false,
   showPerformanceMonitor: false,
   spawnedEnemies: [],
@@ -61,6 +60,12 @@ const createInitialState = (): GameState => ({
   unspawnedEnemies: [],
   wave: 0,
 });
+
+const bindPowerupsToTowers = (powerups: PowerUp[], towers: Tower[]) =>
+  powerups.map((powerup) => ({
+    ...powerup,
+    isTowerBound: hasTowerOnPowerup(powerup, towers),
+  }));
 
 interface GameStore extends GameState {
   // Actions
@@ -109,6 +114,7 @@ interface GameStore extends GameState {
   toggleAutoAdvance: () => void;
   setShowGrid: (show: boolean) => void;
   togglePerformanceMonitor: () => void;
+  toggleDamageNumbers: () => void;
 
   // Counter actions
   getNextTowerId: () => number;
@@ -121,6 +127,9 @@ interface GameStore extends GameState {
   setProjectileIdCounter: (counter: number) => void;
   setDamageNumberIdCounter: (counter: number) => void;
   setParticleIdCounter: (counter: number) => void;
+  setEnemyIdCounter: (counter: number) => void;
+  setPowerupIdCounter: (counter: number) => void;
+  setLandmineIdCounter: (counter: number) => void;
 
   // Computed values
   getAdjacentTowers: (position: Position) => Tower[];
@@ -129,6 +138,10 @@ interface GameStore extends GameState {
 
   // Timing
   updateLastKillTime: (time: number) => void;
+
+  // Persistence actions
+  getSaveableState: () => Partial<SavedGameState>;
+  loadSavedState: (savedState: SavedGameState, mapId: string) => void;
 }
 
 export const useGameStore = create<GameStore>((set, get) => ({
@@ -143,10 +156,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
       if (row) {
         row[tower.position.x] = 'tower';
       }
+      const nextTowers = [...state.towers, tower];
       return {
         grid: newGrid,
         money: state.money - TOWER_STATS[tower.type].cost,
-        towers: [...state.towers, tower],
+        powerups: bindPowerupsToTowers(state.powerups, nextTowers),
+        towers: nextTowers,
       };
     }),
 
@@ -229,8 +244,42 @@ export const useGameStore = create<GameStore>((set, get) => ({
     return id;
   },
 
+  // Persistence actions
+  getSaveableState: () => {
+    const state = get();
+    return {
+      autoAdvance: state.autoAdvance,
+      damageNumberIdCounter: state.damageNumberIdCounter,
+      enemyIdCounter: state.enemyIdCounter,
+      gameSpeed: state.gameSpeed,
+      gameStatus: state.gameStatus,
+      goalPositions: state.goalPositions,
+      grid: state.grid,
+      isPaused: state.isPaused,
+      isWaveActive: state.isWaveActive,
+      landmineIdCounter: state.landmineIdCounter,
+      landmines: state.landmines,
+      lives: state.lives,
+      money: state.money,
+      obstacles: state.obstacles,
+      particleIdCounter: state.particleIdCounter,
+      powerupIdCounter: state.powerupIdCounter,
+      powerups: state.powerups,
+      progress: state.progress,
+      projectileIdCounter: state.projectileIdCounter,
+      runUpgrade: state.runUpgrade,
+      score: state.score,
+      startPositions: state.startPositions,
+      towerIdCounter: state.towerIdCounter,
+      towers: state.towers,
+      unspawnedEnemies: state.unspawnedEnemies,
+      wave: state.wave,
+    };
+  },
+
   initializeGame: (config: GameConfig) => {
     const { mapId, runUpgrade, progress } = config;
+    const effectiveProgress = withProgressDefaults(progress);
     const selectedMap = getMapById(mapId);
 
     const newGrid = Array(GRID_SIZE)
@@ -290,7 +339,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       particles: [],
       powerupIdCounter: 0,
       powerups: [],
-      progress,
+      progress: effectiveProgress,
       projectileIdCounter: 0,
       projectiles: [],
       runUpgrade,
@@ -298,6 +347,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       selectedItem: null,
       selectedTower: null,
       selectedTowerType: null,
+      showDamageNumbers: true,
       showGrid: false,
       showPerformanceMonitor: false,
       spawnedEnemies: [],
@@ -306,6 +356,51 @@ export const useGameStore = create<GameStore>((set, get) => ({
       towers: [],
       unspawnedEnemies: [],
       wave: 0,
+    });
+  },
+
+  loadSavedState: (savedState: SavedGameState, _mapId: string) => {
+    set({
+      autoAdvance: savedState.autoAdvance,
+      combo: 0,
+      damageNumberIdCounter: savedState.damageNumberIdCounter,
+      damageNumbers: [],
+      enemyIdCounter: savedState.enemyIdCounter,
+      gameSpeed: savedState.gameSpeed,
+      gameStatus: savedState.gameStatus,
+      goalPositions: savedState.goalPositions,
+      // Load saved state
+      grid: savedState.grid,
+      isPaused: savedState.isPaused,
+      isWaveActive: savedState.isWaveActive,
+      landmineIdCounter: savedState.landmineIdCounter,
+      landmines: savedState.landmines,
+      lastKillTime: 0,
+      lives: savedState.lives,
+      money: savedState.money,
+      obstacles: savedState.obstacles,
+      particleIdCounter: savedState.particleIdCounter,
+      particles: [],
+      powerupIdCounter: savedState.powerupIdCounter,
+      powerups: bindPowerupsToTowers(savedState.powerups, savedState.towers),
+      progress: withProgressDefaults(savedState.progress),
+      projectileIdCounter: savedState.projectileIdCounter,
+      projectiles: [],
+      runUpgrade: savedState.runUpgrade,
+      score: savedState.score,
+      selectedItem: null,
+      selectedTower: null,
+      selectedTowerType: null,
+      showGrid: false,
+      showPerformanceMonitor: false,
+
+      // Reset transient state that doesn't persist
+      spawnedEnemies: [],
+      startPositions: savedState.startPositions,
+      towerIdCounter: savedState.towerIdCounter,
+      towers: savedState.towers,
+      unspawnedEnemies: savedState.unspawnedEnemies,
+      wave: savedState.wave,
     });
   },
 
@@ -318,9 +413,11 @@ export const useGameStore = create<GameStore>((set, get) => ({
       const row = newGrid[tower.position.y];
       if (row) row[tower.position.x] = 'empty';
 
+      const nextTowers = state.towers.filter((t) => t.id !== towerId);
       return {
         grid: newGrid,
-        towers: state.towers.filter((t) => t.id !== towerId),
+        powerups: bindPowerupsToTowers(state.powerups, nextTowers),
+        towers: nextTowers,
       };
     }),
 
@@ -329,15 +426,18 @@ export const useGameStore = create<GameStore>((set, get) => ({
   setCombo: (combo) => set({ combo }),
   setDamageNumberIdCounter: (counter) =>
     set({ damageNumberIdCounter: counter }),
+  setEnemyIdCounter: (counter) => set({ enemyIdCounter: counter }),
   setGameSpeed: (speed) => set({ gameSpeed: speed }),
   setGameStatus: (status) => set({ gameStatus: status }),
   setIsPaused: (paused) => set({ isPaused: paused }),
   setIsWaveActive: (active) => set({ isWaveActive: active }),
+  setLandmineIdCounter: (counter) => set({ landmineIdCounter: counter }),
   setLives: (lives) => set({ lives }),
 
   // Game state actions
   setMoney: (money) => set({ money }),
   setParticleIdCounter: (counter) => set({ particleIdCounter: counter }),
+  setPowerupIdCounter: (counter) => set({ powerupIdCounter: counter }),
 
   setProjectileIdCounter: (counter) => set({ projectileIdCounter: counter }),
   setScore: (score) => set({ score }),
@@ -352,6 +452,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
   setWave: (wave) => set({ wave }),
   toggleAutoAdvance: () =>
     set((state) => ({ autoAdvance: !state.autoAdvance })),
+  toggleDamageNumbers: () =>
+    set((state) => ({ showDamageNumbers: !state.showDamageNumbers })),
   togglePause: () => set((state) => ({ isPaused: !state.isPaused })),
   togglePerformanceMonitor: () =>
     set((state) => ({ showPerformanceMonitor: !state.showPerformanceMonitor })),
@@ -363,7 +465,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   // Visual effects actions
   updateParticles: (particles) => set({ particles }),
-  updatePowerups: (powerups) => set({ powerups }),
+  updatePowerups: (powerups) =>
+    set((state) => ({
+      powerups: bindPowerupsToTowers(powerups, state.towers),
+    })),
 
   // Projectile actions
   updateProjectiles: (projectiles) => set({ projectiles }),
@@ -371,7 +476,11 @@ export const useGameStore = create<GameStore>((set, get) => ({
   // Enemy actions
   updateSpawnedEnemies: (enemies) => set({ spawnedEnemies: enemies }),
 
-  updateTowers: (towers) => set({ towers }),
+  updateTowers: (towers) =>
+    set((state) => ({
+      powerups: bindPowerupsToTowers(state.powerups, towers),
+      towers,
+    })),
   updateUnspawnedEnemies: (enemies) => set({ unspawnedEnemies: enemies }),
 
   upgradeTower: (towerId) =>

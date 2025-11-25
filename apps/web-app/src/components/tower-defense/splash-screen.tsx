@@ -12,17 +12,24 @@ import type {
   RunUpgrade,
   UpgradeType,
 } from '~/lib/tower-defense/game-types';
+import type { SavedGameInfo } from '~/lib/tower-defense/hooks/use-game-state-persistence';
 
 interface SplashScreenProps {
   onStart: (mapId: string, runUpgrade?: RunUpgrade) => void;
   progress: PlayerProgress;
   onPurchaseUpgrade: (upgradeId: UpgradeType) => void;
+  savedGameInfo: SavedGameInfo | null;
+  onResume: () => void;
+  onNewGame: () => void;
 }
 
 export default function SplashScreen({
   onStart,
   progress,
   onPurchaseUpgrade,
+  savedGameInfo,
+  onResume,
+  onNewGame,
 }: SplashScreenProps) {
   const [animate, setAnimate] = useState(false);
   const [selectedMapId, setSelectedMapId] = useState('open');
@@ -46,6 +53,24 @@ export default function SplashScreen({
 
   const handleUpgradeSelect = (upgrade: RunUpgrade) => {
     onStart(selectedMapId, upgrade);
+  };
+
+  const handleNewGameClick = () => {
+    onNewGame();
+    setShowMapSelector(true);
+  };
+
+  const formatTimestamp = (timestamp: number) => {
+    const now = Date.now();
+    const diff = now - timestamp;
+    const minutes = Math.floor(diff / 60000);
+    const hours = Math.floor(minutes / 60);
+    const days = Math.floor(hours / 24);
+
+    if (days > 0) return `${days}d ago`;
+    if (hours > 0) return `${hours}h ago`;
+    if (minutes > 0) return `${minutes}m ago`;
+    return 'just now';
   };
 
   return (
@@ -178,16 +203,54 @@ export default function SplashScreen({
               </div>
 
               <div className="flex flex-col items-center gap-4">
-                <Button
-                  className="relative group bg-cyan-500/20 hover:bg-cyan-500/40 text-cyan-400 border-2 border-cyan-400 px-12 py-6 sm:px-16 sm:py-8 text-xl sm:text-2xl font-bold transition-all hover:scale-110 active:scale-95"
-                  onClick={() => setShowMapSelector(true)}
-                  style={{
-                    boxShadow: '0 0 30px rgba(6, 182, 212, 0.5)',
-                  }}
-                >
-                  <span className="relative z-10">ENTER</span>
-                  <div className="absolute inset-0 bg-cyan-400/0 group-hover:bg-cyan-400/10 transition-all" />
-                </Button>
+                {savedGameInfo ? (
+                  <>
+                    <div className="bg-cyan-500/10 border-2 border-cyan-400/50 rounded-lg p-4 mb-2 w-full max-w-md">
+                      <div className="text-center mb-3">
+                        <p className="text-cyan-400 font-mono text-sm mb-1">
+                          SAVED GAME DETECTED
+                        </p>
+                        <p className="text-gray-400 text-xs font-mono">
+                          Wave {savedGameInfo.wave} • Score{' '}
+                          {savedGameInfo.score} •{' '}
+                          {formatTimestamp(savedGameInfo.timestamp)}
+                        </p>
+                      </div>
+                    </div>
+
+                    <Button
+                      className="relative group bg-cyan-500/20 hover:bg-cyan-500/40 text-cyan-400 border-2 border-cyan-400 px-12 py-6 sm:px-16 sm:py-8 text-xl sm:text-2xl font-bold transition-all hover:scale-110 active:scale-95 w-full max-w-md"
+                      onClick={onResume}
+                      style={{
+                        boxShadow: '0 0 30px rgba(6, 182, 212, 0.5)',
+                      }}
+                    >
+                      <span className="relative z-10">RESUME RUN</span>
+                      <div className="absolute inset-0 bg-cyan-400/0 group-hover:bg-cyan-400/10 transition-all" />
+                    </Button>
+
+                    <Button
+                      className="bg-pink-500/20 hover:bg-pink-500/40 text-pink-400 border-2 border-pink-400 px-8 py-4 text-lg font-bold transition-all hover:scale-105 w-full max-w-md"
+                      onClick={handleNewGameClick}
+                      style={{
+                        boxShadow: '0 0 20px rgba(236, 72, 153, 0.3)',
+                      }}
+                    >
+                      NEW RUN
+                    </Button>
+                  </>
+                ) : (
+                  <Button
+                    className="relative group bg-cyan-500/20 hover:bg-cyan-500/40 text-cyan-400 border-2 border-cyan-400 px-12 py-6 sm:px-16 sm:py-8 text-xl sm:text-2xl font-bold transition-all hover:scale-110 active:scale-95"
+                    onClick={() => setShowMapSelector(true)}
+                    style={{
+                      boxShadow: '0 0 30px rgba(6, 182, 212, 0.5)',
+                    }}
+                  >
+                    <span className="relative z-10">ENTER</span>
+                    <div className="absolute inset-0 bg-cyan-400/0 group-hover:bg-cyan-400/10 transition-all" />
+                  </Button>
+                )}
 
                 <Button
                   className="bg-purple-500/10 hover:bg-purple-500/30 text-purple-400 border border-purple-500/50 px-8 py-3 font-mono text-sm flex items-center gap-2 transition-all hover:scale-105"

@@ -1,5 +1,6 @@
 'use client';
 
+import { Drawer, DrawerContent } from '@seawatts/ui/drawer';
 import { useEffect, useState } from 'react';
 import GameBoard from '~/components/tower-defense/game-board';
 import GameControls from '~/components/tower-defense/game-controls';
@@ -73,6 +74,7 @@ export default function TowerDefenseGame({
     isPaused,
     gameSpeed,
     autoAdvance,
+    showDamageNumbers,
     startPositions,
     goalPositions,
     obstacles,
@@ -82,6 +84,7 @@ export default function TowerDefenseGame({
     togglePause,
     cycleGameSpeed,
     toggleAutoAdvance,
+    toggleDamageNumbers,
   } = useGameStore();
 
   // Initialize game engine
@@ -93,6 +96,11 @@ export default function TowerDefenseGame({
 
   // Game controls
   const { handleCellClick, upgradeTower, deleteTower } = useGameControls();
+  const closeDetailPanels = () => {
+    setSelectedTower(null);
+    setSelectedItem(null);
+  };
+  const hasDetailSelection = Boolean(selectedTower || selectedItem);
 
   // Handle entering animation
   useEffect(() => {
@@ -320,6 +328,7 @@ export default function TowerDefenseGame({
               powerups={powerups}
               projectiles={projectiles}
               selectedTower={selectedTower}
+              showDamageNumbers={showDamageNumbers}
               startPositions={startPositions}
               touchFeedback={touchFeedback}
               towers={towers}
@@ -331,20 +340,11 @@ export default function TowerDefenseGame({
           className={`transition-all duration-700 mb-2 ${showUI ? 'opacity-100' : 'opacity-0'}`}
           style={{ transitionDelay: '500ms' }}
         >
-          {selectedTower ? (
-            <TowerManagement
-              money={money}
-              onClose={() => setSelectedTower(null)}
-              onDelete={deleteTower}
-              onUpgrade={upgradeTower}
-              tower={selectedTower}
-            />
-          ) : selectedItem ? (
-            <ItemDetails
-              item={selectedItem}
-              onClose={() => setSelectedItem(null)}
-            />
-          ) : (
+          <div
+            className={
+              hasDetailSelection ? 'invisible pointer-events-none' : ''
+            }
+          >
             <TowerSelector
               gameStatus={gameStatus}
               isMobile={isMobile}
@@ -360,7 +360,7 @@ export default function TowerDefenseGame({
               }}
               selectedTowerType={selectedTowerType}
             />
-          )}
+          </div>
         </div>
 
         <div
@@ -373,14 +373,40 @@ export default function TowerDefenseGame({
         </div>
       </div>
 
+      <Drawer
+        direction="bottom"
+        onOpenChange={(open) => {
+          if (!open) closeDetailPanels();
+        }}
+        open={hasDetailSelection}
+      >
+        <DrawerContent className="border-t border-cyan-500/30 bg-black/95 text-white shadow-[0_0_45px_rgba(34,211,238,0.35)] backdrop-blur-lg [&>div:first-child]:hidden">
+          <div className="mx-auto w-full max-w-md">
+            {selectedTower ? (
+              <TowerManagement
+                money={money}
+                onClose={closeDetailPanels}
+                onDelete={deleteTower}
+                onUpgrade={upgradeTower}
+                tower={selectedTower}
+              />
+            ) : selectedItem ? (
+              <ItemDetails item={selectedItem} onClose={closeDetailPanels} />
+            ) : null}
+          </div>
+        </DrawerContent>
+      </Drawer>
+
       {showSettings && (
         <SettingsMenu
           onClose={() => setShowSettings(false)}
           onQuit={() => onQuit?.()}
           onRestart={resetGame}
+          onToggleDamageNumbers={toggleDamageNumbers}
           onTogglePerformanceMonitor={() =>
             setShowPerformanceMonitor(!showPerformanceMonitor)
           }
+          showDamageNumbers={showDamageNumbers}
           showPerformanceMonitor={showPerformanceMonitor}
         />
       )}

@@ -10,7 +10,7 @@ import type {
 } from '../game-types';
 
 const STORAGE_KEY = 'grid_defense_game_state';
-const STORAGE_VERSION = 1;
+const STORAGE_VERSION = 2;
 
 export interface SavedGameState {
   version: number;

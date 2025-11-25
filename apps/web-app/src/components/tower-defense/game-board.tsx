@@ -37,6 +37,7 @@ interface GameBoardProps {
   startPositions: Position[];
   goalPositions: Position[];
   selectedTower: Tower | null;
+  showDamageNumbers: boolean;
   onCellClick: (x: number, y: number) => void;
 }
 
@@ -56,6 +57,7 @@ export default function GameBoard({
   isMobile,
   gameStatus,
   selectedTower,
+  showDamageNumbers,
   onCellClick,
 }: GameBoardProps) {
   return (
@@ -182,7 +184,9 @@ export default function GameBoard({
         particles={particles}
         width={GRID_SIZE * cellSize}
       />
-      <DamageNumbers cellSize={cellSize} damageNumbers={damageNumbers} />
+      {showDamageNumbers && (
+        <DamageNumbers cellSize={cellSize} damageNumbers={damageNumbers} />
+      )}
 
       {gameStatus !== 'playing' && (
         <div className="absolute inset-0 bg-black/95 flex items-center justify-center p-4">

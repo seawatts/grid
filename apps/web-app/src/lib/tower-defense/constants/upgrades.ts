@@ -25,6 +25,14 @@ export const UPGRADES: Record<string, UpgradeConfig> = {
     maxLevel: 3,
     name: 'Power Node Frequency',
   },
+  powerNodePersistence: {
+    costs: [3, 6, 9, 12],
+    description: 'Extends how many waves power nodes persist without towers.',
+    effects: [3, 4, 5, 6, 7], // Base + four upgrade levels
+    id: 'powerNodePersistence',
+    maxLevel: 4,
+    name: 'Power Node Persistence',
+  },
   powerNodePotency: {
     costs: [2, 4, 8],
     description: 'Increases the damage boost provided by power nodes.',
