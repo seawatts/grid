@@ -55,6 +55,7 @@ describe('Item System Tests', () => {
             landmineDamage: 0,
             landmineFrequency: 0,
             powerNodeFrequency: 0, // No upgrade
+            powerNodePersistence: 0,
             powerNodePotency: 0,
           },
         },
@@ -68,6 +69,7 @@ describe('Item System Tests', () => {
             landmineDamage: 0,
             landmineFrequency: 0,
             powerNodeFrequency: 3, // Max upgrade
+            powerNodePersistence: 0,
             powerNodePotency: 0,
           },
         },
@@ -108,6 +110,7 @@ describe('Item System Tests', () => {
             landmineDamage: 0,
             landmineFrequency: 0,
             powerNodeFrequency: 0,
+            powerNodePersistence: 0,
             powerNodePotency: 3, // Max upgrade
           },
         },
@@ -274,6 +277,7 @@ describe('Item System Tests', () => {
             landmineDamage: 0,
             landmineFrequency: 0, // No upgrade
             powerNodeFrequency: 0,
+            powerNodePersistence: 0,
             powerNodePotency: 0,
           },
         },
@@ -287,6 +291,7 @@ describe('Item System Tests', () => {
             landmineDamage: 0,
             landmineFrequency: 3, // Max upgrade
             powerNodeFrequency: 0,
+            powerNodePersistence: 0,
             powerNodePotency: 0,
           },
         },
@@ -314,6 +319,7 @@ describe('Item System Tests', () => {
             landmineDamage: 0, // No upgrade
             landmineFrequency: 0,
             powerNodeFrequency: 0,
+            powerNodePersistence: 0,
             powerNodePotency: 0,
           },
         },
@@ -327,6 +333,7 @@ describe('Item System Tests', () => {
             landmineDamage: 3, // Max upgrade
             landmineFrequency: 0,
             powerNodeFrequency: 0,
+            powerNodePersistence: 0,
             powerNodePotency: 0,
           },
         },
