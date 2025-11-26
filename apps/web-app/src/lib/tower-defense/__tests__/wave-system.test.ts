@@ -87,9 +87,9 @@ describe('Wave System Integration Tests', () => {
       const wave5State = createTestState({ wave: 4 });
       const wave5Result = waveSystem.startWave(wave5State, Date.now());
 
-      expect(wave5Result.unspawnedEnemies?.length).toBeGreaterThan(
-        wave1Result.unspawnedEnemies?.length,
-      );
+      const wave1Length = wave1Result.unspawnedEnemies?.length ?? 0;
+      const wave5Length = wave5Result.unspawnedEnemies?.length ?? 0;
+      expect(wave5Length).toBeGreaterThan(wave1Length);
     });
 
     it('should stagger enemy spawn times', () => {

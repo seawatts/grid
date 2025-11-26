@@ -83,9 +83,9 @@ describe('Item System Tests', () => {
       );
 
       // With upgrade should generate more powerups
-      expect(resultWithUpgrade.powerups?.length).toBeGreaterThanOrEqual(
-        resultNoUpgrade.powerups?.length,
-      );
+      const noUpgradeLength = resultNoUpgrade.powerups?.length ?? 0;
+      const withUpgradeLength = resultWithUpgrade.powerups?.length ?? 0;
+      expect(withUpgradeLength).toBeGreaterThanOrEqual(noUpgradeLength);
     });
 
     it('should respect upgrade effects on powerup boost value', () => {
@@ -97,6 +97,7 @@ describe('Item System Tests', () => {
             landmineDamage: 0,
             landmineFrequency: 0,
             powerNodeFrequency: 0,
+            powerNodePersistence: 0,
             powerNodePotency: 0, // No upgrade
           },
         },
@@ -124,13 +125,10 @@ describe('Item System Tests', () => {
       );
 
       // With upgrade should have higher boost values
-      if (
-        resultNoUpgrade.powerups?.length > 0 &&
-        resultWithUpgrade.powerups?.length > 0
-      ) {
-        expect(resultWithUpgrade.powerups?.[0]?.boost).toBeGreaterThanOrEqual(
-          resultNoUpgrade.powerups?.[0]?.boost,
-        );
+      const noUpgradeBoost = resultNoUpgrade.powerups?.[0]?.boost;
+      const withUpgradeBoost = resultWithUpgrade.powerups?.[0]?.boost;
+      if (noUpgradeBoost !== undefined && withUpgradeBoost !== undefined) {
+        expect(withUpgradeBoost).toBeGreaterThanOrEqual(noUpgradeBoost);
       }
     });
 
@@ -305,9 +303,9 @@ describe('Item System Tests', () => {
       );
 
       // With upgrade should generate more landmines
-      expect(resultWithUpgrade.landmines?.length).toBeGreaterThanOrEqual(
-        resultNoUpgrade.landmines?.length,
-      );
+      const noUpgradeLength = resultNoUpgrade.landmines?.length ?? 0;
+      const withUpgradeLength = resultWithUpgrade.landmines?.length ?? 0;
+      expect(withUpgradeLength).toBeGreaterThanOrEqual(noUpgradeLength);
     });
 
     it('should respect upgrade effects on landmine damage', () => {
@@ -347,13 +345,10 @@ describe('Item System Tests', () => {
       );
 
       // With upgrade should have higher damage values
-      if (
-        resultNoUpgrade.landmines?.length > 0 &&
-        resultWithUpgrade.landmines?.length > 0
-      ) {
-        expect(resultWithUpgrade.landmines?.[0]?.damage).toBeGreaterThanOrEqual(
-          resultNoUpgrade.landmines?.[0]?.damage,
-        );
+      const noUpgradeDamage = resultNoUpgrade.landmines?.[0]?.damage;
+      const withUpgradeDamage = resultWithUpgrade.landmines?.[0]?.damage;
+      if (noUpgradeDamage !== undefined && withUpgradeDamage !== undefined) {
+        expect(withUpgradeDamage).toBeGreaterThanOrEqual(noUpgradeDamage);
       }
     });
 
