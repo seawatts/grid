@@ -209,7 +209,14 @@ describe('Enemy System Integration Tests', () => {
       const updatedSlow = result.spawnedEnemies?.find((e) => e.id === 1);
       const updatedFast = result.spawnedEnemies?.find((e) => e.id === 2);
 
-      expect(updatedFast?.pathIndex).toBeGreaterThan(updatedSlow?.pathIndex);
+      expect(updatedFast?.pathIndex).toBeDefined();
+      expect(updatedSlow?.pathIndex).toBeDefined();
+      if (
+        updatedFast?.pathIndex !== undefined &&
+        updatedSlow?.pathIndex !== undefined
+      ) {
+        expect(updatedFast.pathIndex).toBeGreaterThan(updatedSlow.pathIndex);
+      }
     });
 
     it('should respect game speed multiplier', () => {
@@ -228,6 +235,7 @@ describe('Enemy System Integration Tests', () => {
       const enemySystem = new EnemySystem();
       const result1 = enemySystem.update(state1, 16, Date.now());
       const normalProgress = result1.spawnedEnemies?.[0]?.pathIndex;
+      expect(normalProgress).toBeDefined();
 
       // Double speed
       const state2 = createTestState({
@@ -238,7 +246,11 @@ describe('Enemy System Integration Tests', () => {
       const result2 = enemySystem.update(state2, 16, Date.now());
       const fastProgress = result2.spawnedEnemies?.[0]?.pathIndex;
 
-      expect(fastProgress).toBeGreaterThan(normalProgress);
+      expect(fastProgress).toBeDefined();
+      expect(normalProgress).toBeDefined();
+      if (fastProgress !== undefined && normalProgress !== undefined) {
+        expect(fastProgress).toBeGreaterThan(normalProgress);
+      }
     });
 
     it('should remove enemy and reduce lives when reaching goal', () => {
@@ -355,8 +367,12 @@ describe('Enemy System Integration Tests', () => {
       const updated2 = result.spawnedEnemies?.find((e) => e.id === 2);
 
       // Both should be in different cells
-      const cell1 = `${Math.floor(updated1?.position.x)},${Math.floor(updated1?.position.y)}`;
-      const cell2 = `${Math.floor(updated2?.position.x)},${Math.floor(updated2?.position.y)}`;
+      const cell1 = updated1?.position
+        ? `${Math.floor(updated1.position.x)},${Math.floor(updated1.position.y)}`
+        : '';
+      const cell2 = updated2?.position
+        ? `${Math.floor(updated2.position.x)},${Math.floor(updated2.position.y)}`
+        : '';
 
       // If enemy2 would collide, it should stay in its current position
       expect(cell1).not.toBe(cell2);

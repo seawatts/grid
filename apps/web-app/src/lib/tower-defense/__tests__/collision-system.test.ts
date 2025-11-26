@@ -215,7 +215,11 @@ describe('Collision System Tests', () => {
       // Primary target takes full damage, splash target takes 50%
       const primary = result.spawnedEnemies?.find((e) => e.id === 1);
       const splash = result.spawnedEnemies?.find((e) => e.id === 2);
-      expect(primary?.health).toBeLessThan(splash?.health);
+      expect(primary?.health).toBeDefined();
+      expect(splash?.health).toBeDefined();
+      if (primary?.health !== undefined && splash?.health !== undefined) {
+        expect(primary.health).toBeLessThan(splash.health);
+      }
     });
 
     it('should not apply splash damage to enemies out of range', () => {
@@ -488,8 +492,12 @@ describe('Collision System Tests', () => {
       const result = collisionSystem.update(state, 16, timestamp);
 
       // Damage should be increased due to adjacent tower
-      const damageTaken = 100 - result.spawnedEnemies?.[0]?.health;
-      expect(damageTaken).toBeGreaterThan(20); // Base damage is 20
+      const enemyHealth = result.spawnedEnemies?.[0]?.health;
+      expect(enemyHealth).toBeDefined();
+      if (enemyHealth !== undefined) {
+        const damageTaken = 100 - enemyHealth;
+        expect(damageTaken).toBeGreaterThan(20); // Base damage is 20
+      }
     });
   });
 
@@ -533,8 +541,12 @@ describe('Collision System Tests', () => {
       const result = collisionSystem.update(state, 16, timestamp);
 
       // Damage should be doubled
-      const damageTaken = 100 - result.spawnedEnemies?.[0]?.health;
-      expect(damageTaken).toBeGreaterThanOrEqual(40); // 20 * 2 = 40
+      const enemyHealth = result.spawnedEnemies?.[0]?.health;
+      expect(enemyHealth).toBeDefined();
+      if (enemyHealth !== undefined) {
+        const damageTaken = 100 - enemyHealth;
+        expect(damageTaken).toBeGreaterThanOrEqual(40); // 20 * 2 = 40
+      }
     });
   });
 
@@ -584,8 +596,12 @@ describe('Collision System Tests', () => {
       expect(result.projectiles).toHaveLength(0);
 
       // Enemy should take damage from both
-      const damageTaken = 100 - result.spawnedEnemies?.[0]?.health;
-      expect(damageTaken).toBeGreaterThanOrEqual(40); // 20 * 2
+      const enemyHealth = result.spawnedEnemies?.[0]?.health;
+      expect(enemyHealth).toBeDefined();
+      if (enemyHealth !== undefined) {
+        const damageTaken = 100 - enemyHealth;
+        expect(damageTaken).toBeGreaterThanOrEqual(40); // 20 * 2
+      }
     });
   });
 });

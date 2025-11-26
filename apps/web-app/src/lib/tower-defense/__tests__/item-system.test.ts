@@ -36,7 +36,7 @@ describe('Item System Tests', () => {
       const itemSystem = new ItemSystem();
       const result = itemSystem.generateWaveItems(state, 1);
 
-      const ids = result.powerups?.map((p) => p.id);
+      const ids = result.powerups?.map((p) => p.id) ?? [];
       const uniqueIds = new Set(ids);
       expect(uniqueIds.size).toBe(ids.length);
 
@@ -195,7 +195,7 @@ describe('Item System Tests', () => {
       expect(existingPreserved).toBe(true);
 
       // New powerups (id !== 1) should not overlap with existing one at (5,5)
-      const newPowerups = result.powerups?.filter((p) => p.id !== 1);
+      const newPowerups = result.powerups?.filter((p) => p.id !== 1) ?? [];
       const overlapping = newPowerups.some(
         (p) => p.position.x === 5 && p.position.y === 5,
       );
@@ -258,7 +258,7 @@ describe('Item System Tests', () => {
       const itemSystem = new ItemSystem();
       const result = itemSystem.generateWaveItems(state, 1);
 
-      const ids = result.landmines?.map((l) => l.id);
+      const ids = result.landmines?.map((l) => l.id) ?? [];
       const uniqueIds = new Set(ids);
       expect(uniqueIds.size).toBe(ids.length);
 
@@ -384,7 +384,7 @@ describe('Item System Tests', () => {
       expect(existingLandminePreserved).toBe(true);
 
       // New landmines (id !== 1) should not overlap with existing items
-      const newLandmines = result.landmines?.filter((l) => l.id !== 1);
+      const newLandmines = result.landmines?.filter((l) => l.id !== 1) ?? [];
       const overlapping = newLandmines.some(
         (l) =>
           (l.position.x === 5 && l.position.y === 5) ||
@@ -466,8 +466,10 @@ describe('Item System Tests', () => {
       const result2 = itemSystem.generateWaveItems(state, 2);
 
       // Higher count should generate more items (if upgrades allow)
-      const total1 = result1.powerups?.length + result1.landmines?.length;
-      const total2 = result2.powerups?.length + result2.landmines?.length;
+      const total1 =
+        (result1.powerups?.length ?? 0) + (result1.landmines?.length ?? 0);
+      const total2 =
+        (result2.powerups?.length ?? 0) + (result2.landmines?.length ?? 0);
       expect(total2).toBeGreaterThanOrEqual(total1);
     });
   });
@@ -495,7 +497,8 @@ describe('Item System Tests', () => {
       const result = itemSystem.generateWaveItems(state, 1);
 
       // Should only place items in available cells
-      const totalItems = result.powerups?.length + result.landmines?.length;
+      const totalItems =
+        (result.powerups?.length ?? 0) + (result.landmines?.length ?? 0);
       expect(totalItems).toBeLessThanOrEqual(2);
     });
 

@@ -51,7 +51,8 @@ describe('Item Generation Timing Tests', () => {
 
       // First generation
       const result1 = itemSystem.generateWaveItems(state, 1);
-      const initialCount = result1.powerups?.length + result1.landmines?.length;
+      const initialCount =
+        (result1.powerups?.length ?? 0) + (result1.landmines?.length ?? 0);
 
       // Update state with first generation
       const updatedState = {
@@ -62,7 +63,8 @@ describe('Item Generation Timing Tests', () => {
 
       // Second generation (e.g., after upgrading)
       const result2 = itemSystem.generateWaveItems(updatedState, 1);
-      const finalCount = result2.powerups?.length + result2.landmines?.length;
+      const finalCount =
+        (result2.powerups?.length ?? 0) + (result2.landmines?.length ?? 0);
 
       // Should have at least as many items as before (existing ones preserved)
       expect(finalCount).toBeGreaterThanOrEqual(initialCount);

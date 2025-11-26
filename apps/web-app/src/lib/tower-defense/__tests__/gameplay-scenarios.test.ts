@@ -172,7 +172,10 @@ describe('Gameplay Scenario Tests', () => {
         state = { ...state, ...updates };
 
         if (state.spawnedEnemies?.length > 0) {
-          damageDealt = 100 - state.spawnedEnemies?.[0]?.health;
+          const enemyHealth = state.spawnedEnemies[0]?.health;
+          if (enemyHealth !== undefined) {
+            damageDealt = 100 - enemyHealth;
+          }
         }
 
         return damageDealt > 0;
@@ -382,7 +385,11 @@ describe('Gameplay Scenario Tests', () => {
       const wave5EnemyCount = wave5.unspawnedEnemies?.length;
 
       // Later waves should have more enemies
-      expect(wave5EnemyCount).toBeGreaterThan(wave1EnemyCount);
+      expect(wave1EnemyCount).toBeDefined();
+      expect(wave5EnemyCount).toBeDefined();
+      if (wave1EnemyCount !== undefined && wave5EnemyCount !== undefined) {
+        expect(wave5EnemyCount).toBeGreaterThan(wave1EnemyCount);
+      }
     });
   });
 
@@ -444,7 +451,8 @@ describe('Gameplay Scenario Tests', () => {
 
         if (
           state.spawnedEnemies?.length > 0 &&
-          state.spawnedEnemies?.[0]?.health < 50
+          state.spawnedEnemies[0]?.health !== undefined &&
+          state.spawnedEnemies[0].health < 50
         ) {
           enemyWasHit = true;
         }
@@ -515,7 +523,10 @@ describe('Gameplay Scenario Tests', () => {
         state = { ...state, ...updates };
 
         if (state.spawnedEnemies?.length > 0) {
-          damageDealt = 800 - state.spawnedEnemies?.[0]?.health;
+          const enemyHealth = state.spawnedEnemies[0]?.health;
+          if (enemyHealth !== undefined) {
+            damageDealt = 800 - enemyHealth;
+          }
         }
       }, 50);
 

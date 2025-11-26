@@ -68,7 +68,7 @@ describe('Wave System Integration Tests', () => {
       expect(result.unspawnedEnemies?.length).toBeGreaterThan(0);
 
       // All enemies should have unique IDs
-      const ids = result.unspawnedEnemies?.map((e) => e.id);
+      const ids = result.unspawnedEnemies?.map((e) => e.id) ?? [];
       const uniqueIds = new Set(ids);
       expect(uniqueIds.size).toBe(ids.length);
 
@@ -100,7 +100,7 @@ describe('Wave System Integration Tests', () => {
       const result = waveSystem.startWave(state, timestamp);
 
       expect(result.unspawnedEnemies).toBeDefined();
-      const spawnTimes = result.unspawnedEnemies?.map((e) => e.spawnTime);
+      const spawnTimes = result.unspawnedEnemies?.map((e) => e.spawnTime) ?? [];
 
       // Each enemy should have a different spawn time
       const uniqueSpawnTimes = new Set(spawnTimes);
@@ -109,8 +109,9 @@ describe('Wave System Integration Tests', () => {
       // Spawn times should be in order
       for (let i = 1; i < spawnTimes.length; i++) {
         const prev = spawnTimes[i - 1];
-        if (prev !== undefined) {
-          expect(spawnTimes[i]).toBeGreaterThan(prev);
+        const current = spawnTimes[i];
+        if (prev !== undefined && current !== undefined) {
+          expect(current).toBeGreaterThan(prev);
         }
       }
     });

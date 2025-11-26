@@ -156,10 +156,13 @@ describe('Projectile Tracking Integration Tests', () => {
       // Projectile target should update to follow enemy
       const trackedProjectile = state.projectiles[0];
       expect(trackedProjectile).toBeDefined();
-      expect(trackedProjectile?.target.x).toBeCloseTo(
-        movedEnemy?.position.x,
-        1,
-      );
+      expect(movedEnemy?.position.x).toBeDefined();
+      if (trackedProjectile && movedEnemy?.position.x !== undefined) {
+        expect(trackedProjectile.target.x).toBeCloseTo(
+          movedEnemy.position.x,
+          1,
+        );
+      }
 
       // Step 4: Continue updates until projectile reaches target
       for (let i = 0; i < 20; i++) {
