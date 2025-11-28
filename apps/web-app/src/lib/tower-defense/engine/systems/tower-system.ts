@@ -5,7 +5,10 @@ import type {
   GameSystem,
   SystemUpdateResult,
 } from '../../store/types';
-import { calculateFireRate } from '../../utils/calculations';
+import {
+  calculateFireRate,
+  calculateTowerRange,
+} from '../../utils/calculations';
 
 export class TowerSystem implements GameSystem {
   update(
@@ -13,8 +16,14 @@ export class TowerSystem implements GameSystem {
     _deltaTime: number,
     timestamp: number,
   ): SystemUpdateResult {
-    const { towers, spawnedEnemies, projectiles, runUpgrade, gameSpeed } =
-      state;
+    const {
+      towers,
+      spawnedEnemies,
+      projectiles,
+      runUpgrade,
+      gameSpeed,
+      activeWavePowerUps,
+    } = state;
 
     const newProjectiles: Projectile[] = [...projectiles];
     const updatedTowers: Tower[] = [];
@@ -24,6 +33,7 @@ export class TowerSystem implements GameSystem {
     for (const tower of towers) {
       const stats = TOWER_STATS[tower.type];
       const adjustedFireRate = calculateFireRate({
+        activeWavePowerUps,
         gameSpeed,
         runUpgrade,
         tower,
@@ -35,11 +45,18 @@ export class TowerSystem implements GameSystem {
         continue;
       }
 
+      // Calculate effective range with wave power-ups
+      const effectiveRange = calculateTowerRange({
+        activeWavePowerUps,
+        baseRange: stats.range,
+        towerLevel: tower.level,
+      });
+
       // Find target
       const target = this.findTarget(
         tower,
         spawnedEnemies,
-        stats.range,
+        effectiveRange,
         timestamp,
       );
 

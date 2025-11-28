@@ -62,6 +62,11 @@ export function useGameEngine(config?: GameConfig) {
       store.updateDamageNumbers(updates.damageNumbers);
     if (updates.damageNumberIdCounter !== undefined)
       store.setDamageNumberIdCounter(updates.damageNumberIdCounter);
+    if (updates.placeables !== undefined)
+      store.updatePlaceables(updates.placeables);
+    if (updates.placeableIdCounter !== undefined)
+      store.setPlaceableIdCounter(updates.placeableIdCounter);
+    // Legacy updates (for backward compatibility)
     if (updates.powerups !== undefined) store.updatePowerups(updates.powerups);
     if (updates.landmines !== undefined)
       store.updateLandmines(updates.landmines);

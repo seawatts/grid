@@ -2,13 +2,19 @@
 
 import type { DamageNumber } from '~/lib/tower-defense/game-types';
 
+interface DamageNumbersProps {
+  damageNumbers: DamageNumber[];
+  cellSize: number;
+  offsetX?: number;
+  offsetY?: number;
+}
+
 export default function DamageNumbers({
   damageNumbers,
   cellSize,
-}: {
-  damageNumbers: DamageNumber[];
-  cellSize: number;
-}) {
+  offsetX = 0,
+  offsetY = 0,
+}: DamageNumbersProps) {
   if (!damageNumbers || !Array.isArray(damageNumbers)) {
     return null;
   }
@@ -25,10 +31,10 @@ export default function DamageNumbers({
             key={dmg.id}
             style={{
               color: dmg.color,
-              left: dmg.position.x * cellSize,
+              left: offsetX + dmg.position.x * cellSize,
               opacity,
               textShadow: `0 0 8px ${dmg.color}`,
-              top: dmg.position.y * cellSize - yOffset,
+              top: offsetY + dmg.position.y * cellSize - yOffset,
             }}
           >
             -{dmg.value}

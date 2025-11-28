@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import SplashScreen from '~/components/tower-defense/splash-screen';
 import TowerDefenseGame from '~/components/tower-defense/tower-defense-game';
-import type { RunUpgrade } from '~/lib/tower-defense/game-types';
+import type { WavePowerUp } from '~/lib/tower-defense/game-types';
 import { useGameProgress } from '~/lib/tower-defense/hooks/use-game-progress';
 import { useGameStatePersistence } from '~/lib/tower-defense/hooks/use-game-state-persistence';
 
@@ -11,17 +11,18 @@ export default function GameContainer() {
   const [showSplash, setShowSplash] = useState(true);
   const [gameEntered, setGameEntered] = useState(false);
   const [selectedMapId, setSelectedMapId] = useState('open');
-  const [selectedRunUpgrade, setSelectedRunUpgrade] = useState<
-    RunUpgrade | undefined
+  const [selectedInitialPowerUp, setSelectedInitialPowerUp] = useState<
+    WavePowerUp | undefined
   >(undefined);
   const [isResuming, setIsResuming] = useState(false);
 
-  const { progress, purchaseUpgrade, earnTechPoints } = useGameProgress();
+  const { progress, purchaseUpgrade, earnTechPoints, recordMapRating } =
+    useGameProgress();
   const { savedGameInfo, clearSavedGame } = useGameStatePersistence();
 
-  const handleEnterGame = (mapId: string, runUpgrade?: RunUpgrade) => {
+  const handleEnterGame = (mapId: string, initialPowerUp?: WavePowerUp) => {
     setSelectedMapId(mapId);
-    setSelectedRunUpgrade(runUpgrade);
+    setSelectedInitialPowerUp(initialPowerUp);
     setShowSplash(false);
     setGameEntered(true);
     setIsResuming(false);
@@ -44,7 +45,7 @@ export default function GameContainer() {
   const handleQuit = () => {
     setShowSplash(true);
     setGameEntered(false);
-    setSelectedRunUpgrade(undefined);
+    setSelectedInitialPowerUp(undefined);
     setIsResuming(false);
   };
 
@@ -63,13 +64,14 @@ export default function GameContainer() {
 
   return (
     <TowerDefenseGame
+      initialPowerUp={selectedInitialPowerUp}
       isEntering={gameEntered}
       isResuming={isResuming}
       mapId={selectedMapId}
       onEarnTP={earnTechPoints}
       onQuit={handleQuit}
+      onRecordMapRating={recordMapRating}
       progress={progress}
-      runUpgrade={selectedRunUpgrade}
     />
   );
 }

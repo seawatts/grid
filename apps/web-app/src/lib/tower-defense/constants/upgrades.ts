@@ -1,6 +1,22 @@
 import type { RunUpgrade, UpgradeConfig } from '../game-types';
 
 export const UPGRADES: Record<string, UpgradeConfig> = {
+  gridBugDamage: {
+    costs: [2, 4, 8],
+    description: 'Increases the damage dealt by Grid Bugs.',
+    effects: [50, 75, 100, 150], // Base, Lvl 1, Lvl 2, Lvl 3
+    id: 'gridBugDamage',
+    maxLevel: 3,
+    name: 'Grid Bug Damage',
+  },
+  gridBugFrequency: {
+    costs: [2, 4, 8],
+    description: 'Increases the number of Grid Bugs that appear.',
+    effects: [1, 1.5, 2, 3], // Base, Lvl 1, Lvl 2, Lvl 3
+    id: 'gridBugFrequency',
+    maxLevel: 3,
+    name: 'Grid Bug Frequency',
+  },
   landmineDamage: {
     costs: [2, 4, 8],
     description: 'Increases the damage dealt by landmines.',
@@ -40,6 +56,22 @@ export const UPGRADES: Record<string, UpgradeConfig> = {
     id: 'powerNodePotency',
     maxLevel: 3,
     name: 'Power Node Potency',
+  },
+  streamFrequency: {
+    costs: [2, 4, 8],
+    description: 'Increases the number of Stream traps that appear.',
+    effects: [1, 1.5, 2, 2.5], // Base, Lvl 1, Lvl 2, Lvl 3
+    id: 'streamFrequency',
+    maxLevel: 3,
+    name: 'Stream Frequency',
+  },
+  streamLength: {
+    costs: [3, 6, 9],
+    description: 'Increases the length of Stream traps.',
+    effects: [3, 4, 5, 6], // Base, Lvl 1, Lvl 2, Lvl 3
+    id: 'streamLength',
+    maxLevel: 3,
+    name: 'Stream Length',
   },
 } as const;
 

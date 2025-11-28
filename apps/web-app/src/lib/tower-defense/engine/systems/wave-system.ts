@@ -1,6 +1,9 @@
 import { ENEMY_STATS } from '../../constants/balance';
 import type { Enemy, EnemyType } from '../../game-types';
-import { findPathsForMultipleStartsAndGoals } from '../../pathfinding';
+import {
+  combineBlockedPositions,
+  findPathsForMultipleStartsAndGoals,
+} from '../../pathfinding';
 import type {
   GameState,
   GameSystem,
@@ -40,10 +43,14 @@ export class WaveSystem implements GameSystem {
     const newWave = state.wave + 1;
     const enemyCount = 5 + newWave * 2;
 
-    const allBlockedPositions = [
+    const baseBlockedPositions = [
       ...state.towers.map((t) => t.position),
       ...state.obstacles,
     ];
+    const allBlockedPositions = combineBlockedPositions(
+      baseBlockedPositions,
+      state.placeables,
+    );
 
     const pathsForStarts = findPathsForMultipleStartsAndGoals(
       state.startPositions,

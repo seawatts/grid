@@ -4,18 +4,18 @@ import { Button } from '@seawatts/ui/button';
 import { useEffect, useState } from 'react';
 import AnimatedLine from '~/components/animated-line';
 import MapSelector from '~/components/tower-defense/map-selector';
-import RunUpgradeSelector from '~/components/tower-defense/run-upgrade-selector';
+import PowerUpSelector from '~/components/tower-defense/power-up-selector';
 import UpgradesMenu from '~/components/tower-defense/upgrades-menu';
-import { RUN_UPGRADES } from '~/lib/tower-defense/game-constants';
+import { selectRandomPowerUps } from '~/lib/tower-defense/constants/wave-powerups';
 import type {
   PlayerProgress,
-  RunUpgrade,
   UpgradeType,
+  WavePowerUp,
 } from '~/lib/tower-defense/game-types';
 import type { SavedGameInfo } from '~/lib/tower-defense/hooks/use-game-state-persistence';
 
 interface SplashScreenProps {
-  onStart: (mapId: string, runUpgrade?: RunUpgrade) => void;
+  onStart: (mapId: string, initialPowerUp?: WavePowerUp) => void;
   progress: PlayerProgress;
   onPurchaseUpgrade: (upgradeId: UpgradeType) => void;
   savedGameInfo: SavedGameInfo | null;
@@ -35,24 +35,22 @@ export default function SplashScreen({
   const [selectedMapId, setSelectedMapId] = useState('open');
   const [showMapSelector, setShowMapSelector] = useState(false);
   const [showUpgrades, setShowUpgrades] = useState(false);
-  const [showRunSelector, setShowRunSelector] = useState(false);
-  const [availableRunUpgrades, setAvailableRunUpgrades] = useState<
-    RunUpgrade[]
-  >([]);
+  const [showPowerUpSelector, setShowPowerUpSelector] = useState(false);
+  const [availablePowerUps, setAvailablePowerUps] = useState<WavePowerUp[]>([]);
 
   useEffect(() => {
     setAnimate(true);
   }, []);
 
   const handleMapConfirm = () => {
-    const shuffled = [...RUN_UPGRADES].sort(() => 0.5 - Math.random());
-    setAvailableRunUpgrades(shuffled.slice(0, 3));
+    const randomPowerUps = selectRandomPowerUps(3);
+    setAvailablePowerUps(randomPowerUps);
     setShowMapSelector(false);
-    setShowRunSelector(true);
+    setShowPowerUpSelector(true);
   };
 
-  const handleUpgradeSelect = (upgrade: RunUpgrade) => {
-    onStart(selectedMapId, upgrade);
+  const handlePowerUpSelect = (powerUp: WavePowerUp) => {
+    onStart(selectedMapId, powerUp);
   };
 
   const handleNewGameClick = () => {
@@ -149,17 +147,17 @@ export default function SplashScreen({
             THE GRID
           </h1>
 
-          {showRunSelector ? (
+          {showPowerUpSelector ? (
             <div className="mb-8">
-              <RunUpgradeSelector
-                onSelect={handleUpgradeSelect}
-                upgrades={availableRunUpgrades}
+              <PowerUpSelector
+                onSelect={handlePowerUpSelect}
+                powerUps={availablePowerUps}
               />
               <div className="flex gap-4 justify-center mt-8">
                 <Button
                   className="bg-gray-700/20 hover:bg-gray-700/40 text-gray-400 border border-gray-600 px-6 py-3 text-sm font-mono"
                   onClick={() => {
-                    setShowRunSelector(false);
+                    setShowPowerUpSelector(false);
                     setShowMapSelector(true);
                   }}
                 >
@@ -170,6 +168,7 @@ export default function SplashScreen({
           ) : showMapSelector ? (
             <div className="mb-8">
               <MapSelector
+                mapRatings={progress.mapRatings}
                 onSelectMap={setSelectedMapId}
                 selectedMapId={selectedMapId}
               />

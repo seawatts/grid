@@ -7,6 +7,7 @@ import type {
   Enemy,
   Landmine,
   Particle,
+  PlaceableItem,
   Position,
   PowerUp,
   Projectile,
@@ -26,6 +27,8 @@ interface GameBoardProps {
   projectiles: Projectile[];
   particles: Particle[];
   damageNumbers: DamageNumber[];
+  placeables?: PlaceableItem[];
+  // Legacy props (kept for backward compatibility)
   powerups: PowerUp[];
   landmines: Landmine[];
   debugPaths: Position[][];
@@ -48,6 +51,7 @@ export default function GameBoard({
   projectiles,
   particles,
   damageNumbers,
+  placeables = [],
   powerups,
   landmines,
   debugPaths,
@@ -108,6 +112,12 @@ export default function GameBoard({
       {/* Grid cells */}
       {grid.flatMap((row, y) =>
         row.map((cell, x) => {
+          // Find placeables at this cell
+          const cellPlaceables = placeables.filter((item) =>
+            item.positions.some((pos) => pos.x === x && pos.y === y),
+          );
+
+          // Legacy item lookup (for backward compatibility)
           const powerup = powerups.find(
             (p) => p.position.x === x && p.position.y === y,
           );
@@ -129,6 +139,7 @@ export default function GameBoard({
               key={cellId}
               landmine={landmine}
               onClick={onCellClick}
+              placeables={cellPlaceables}
               powerup={powerup}
               touchFeedback={touchFeedback}
               x={x}

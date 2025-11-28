@@ -1,8 +1,15 @@
+import { TRAP_CONFIGS } from '../../constants/placeables';
 import {
   PARTICLE_COUNT_ENEMY_KILL,
   PARTICLE_COUNT_LANDMINE,
 } from '../../constants/visuals';
-import type { DamageNumber, Enemy, Particle, Tower } from '../../game-types';
+import type {
+  DamageNumber,
+  Enemy,
+  Particle,
+  PlaceableItem,
+  Tower,
+} from '../../game-types';
 import type {
   GameState,
   GameSystem,
@@ -24,6 +31,9 @@ export class CollisionSystem implements GameSystem {
   setParticlePool(pool: ParticlePool): void {
     this.particlePool = pool;
   }
+  // Track damage cooldowns per enemy per trap (for persistent traps like Grid Bug)
+  private trapDamageCooldowns = new Map<number, Map<number, number>>(); // enemyId -> trapId -> lastDamageTime
+
   update(
     state: GameState,
     _deltaTime: number,
@@ -32,6 +42,7 @@ export class CollisionSystem implements GameSystem {
     const {
       spawnedEnemies,
       projectiles,
+      placeables,
       landmines,
       towers,
       powerups,
@@ -43,6 +54,7 @@ export class CollisionSystem implements GameSystem {
     let newEnemies = [...spawnedEnemies];
     const newParticles: Particle[] = [];
     const newDamageNumbers: DamageNumber[] = [];
+    let newPlaceables = [...placeables];
     let newLandmines = [...landmines];
 
     let moneyGained = 0;
@@ -52,13 +64,36 @@ export class CollisionSystem implements GameSystem {
     let damageNumberIdCounter = state.damageNumberIdCounter;
     let particleIdCounter = state.particleIdCounter;
 
-    // Check landmine collisions first
+    // Check placeable collisions first (unified system)
+    const placeableCollisionResult = this.checkPlaceableCollisions(
+      newEnemies,
+      newPlaceables,
+      timestamp,
+      combo,
+      lastKillTime,
+      state,
+      damageNumberIdCounter,
+      particleIdCounter,
+    );
+
+    newEnemies = placeableCollisionResult.enemies;
+    newPlaceables = placeableCollisionResult.placeables;
+    newParticles.push(...placeableCollisionResult.particles);
+    newDamageNumbers.push(...placeableCollisionResult.damageNumbers);
+    moneyGained += placeableCollisionResult.moneyGained;
+    scoreGained += placeableCollisionResult.scoreGained;
+    comboIncrement += placeableCollisionResult.comboIncrement;
+    if (placeableCollisionResult.shouldResetCombo) shouldResetComboFlag = true;
+    damageNumberIdCounter = placeableCollisionResult.damageNumberIdCounter;
+    particleIdCounter = placeableCollisionResult.particleIdCounter;
+
+    // Check legacy landmine collisions (for backward compatibility)
     const landmineCollisionResult = this.checkLandmineCollisions(
       newEnemies,
       newLandmines,
       timestamp,
-      combo,
-      lastKillTime,
+      combo + comboIncrement,
+      placeableCollisionResult.lastKillTime,
       state,
       damageNumberIdCounter,
       particleIdCounter,
@@ -102,6 +137,7 @@ export class CollisionSystem implements GameSystem {
 
     const result: SystemUpdateResult = {
       landmines: newLandmines,
+      placeables: newPlaceables,
       projectiles: projectileCollisionResult.projectiles,
       spawnedEnemies: newEnemies,
     };
@@ -135,6 +171,199 @@ export class CollisionSystem implements GameSystem {
     }
 
     return result;
+  }
+
+  private checkPlaceableCollisions(
+    enemies: Enemy[],
+    placeables: PlaceableItem[],
+    timestamp: number,
+    combo: number,
+    lastKillTime: number,
+    state: GameState,
+    damageNumberIdCounter: number,
+    particleIdCounter: number,
+  ) {
+    let newEnemies = enemies;
+    let newPlaceables = placeables;
+    const particles: Particle[] = [];
+    const damageNumbers: DamageNumber[] = [];
+    let moneyGained = 0;
+    let scoreGained = 0;
+    let comboIncrement = 0;
+    let shouldResetComboFlag = false;
+    let newLastKillTime = lastKillTime;
+
+    // Only process trap items (powerups don't have collisions)
+    const traps = placeables.filter((item) => item.category === 'trap');
+
+    for (const enemy of newEnemies) {
+      const enemyCellX = Math.floor(enemy.position.x);
+      const enemyCellY = Math.floor(enemy.position.y);
+
+      // Find traps at enemy's position
+      const hitTraps = traps.filter((trap) =>
+        trap.positions.some(
+          (pos) =>
+            Math.floor(pos.x) === enemyCellX &&
+            Math.floor(pos.y) === enemyCellY,
+        ),
+      );
+
+      for (const trap of hitTraps) {
+        const config = TRAP_CONFIGS[trap.type as keyof typeof TRAP_CONFIGS];
+        if (!config) continue;
+
+        // Check if trap should damage on entry
+        if (config.behavior.damageOnEntry) {
+          // For persistent traps, check cooldown per enemy
+          if (config.behavior.persistent) {
+            const enemyCooldowns =
+              this.trapDamageCooldowns.get(enemy.id) ?? new Map();
+            const lastDamageTime = enemyCooldowns.get(trap.id);
+
+            // Only damage if enemy just entered (no previous damage time) or enough time has passed
+            // For Grid Bug, we want to damage once per cell entry, so we check if enemy moved to a new cell
+            if (
+              lastDamageTime === undefined ||
+              timestamp - lastDamageTime > 100
+            ) {
+              // Update cooldown
+              enemyCooldowns.set(trap.id, timestamp);
+              this.trapDamageCooldowns.set(enemy.id, enemyCooldowns);
+
+              // Apply damage
+              const damage = trap.damage;
+              damageNumbers.push({
+                color: getDamageNumberColor(trap.type),
+                id: damageNumberIdCounter + damageNumbers.length,
+                life: 60,
+                position: { ...enemy.position },
+                value: Math.floor(damage),
+              });
+
+              const newHealth = enemy.health - damage;
+              if (newHealth <= 0) {
+                // Enemy killed
+                newEnemies = newEnemies.filter((e) => e.id !== enemy.id);
+                this.trapDamageCooldowns.delete(enemy.id);
+
+                const reward = calculateReward({
+                  activeWavePowerUps: state.activeWavePowerUps,
+                  baseReward: enemy.reward,
+                  combo: 0,
+                  runUpgrade: state.runUpgrade,
+                });
+                moneyGained += reward;
+
+                if (shouldResetCombo(newLastKillTime, timestamp)) {
+                  shouldResetComboFlag = true;
+                  comboIncrement = 1;
+                } else {
+                  comboIncrement++;
+                }
+                newLastKillTime = timestamp;
+
+                const effectiveCombo = shouldResetComboFlag
+                  ? 1
+                  : combo + comboIncrement;
+                scoreGained += calculateScoreWithCombo(
+                  enemy.reward,
+                  effectiveCombo,
+                );
+              } else {
+                newEnemies = newEnemies.map((e) =>
+                  e.id === enemy.id ? { ...e, health: newHealth } : e,
+                );
+              }
+            }
+          } else {
+            // Non-persistent trap (like landmine) - remove after use
+            newPlaceables = newPlaceables.filter((p) => p.id !== trap.id);
+
+            // Create explosion particles
+            if (this.particlePool && trap.positions.length > 0) {
+              const trapPos = trap.positions[0];
+              for (let i = 0; i < PARTICLE_COUNT_LANDMINE; i++) {
+                const angle = (Math.PI * 2 * i) / PARTICLE_COUNT_LANDMINE;
+                const speed = 0.08 + Math.random() * 0.05;
+                this.particlePool.spawn(
+                  trapPos.x,
+                  trapPos.y,
+                  Math.cos(angle) * speed,
+                  Math.sin(angle) * speed,
+                  40,
+                  'rgb(239, 68, 68)',
+                );
+              }
+            }
+
+            const damage = trap.damage;
+            damageNumbers.push({
+              color: getDamageNumberColor(trap.type),
+              id: damageNumberIdCounter + damageNumbers.length,
+              life: 60,
+              position: { ...enemy.position },
+              value: Math.floor(damage),
+            });
+
+            const newHealth = enemy.health - damage;
+            if (newHealth <= 0) {
+              newEnemies = newEnemies.filter((e) => e.id !== enemy.id);
+
+              const reward = calculateReward({
+                activeWavePowerUps: state.activeWavePowerUps,
+                baseReward: enemy.reward,
+                combo: 0,
+                runUpgrade: state.runUpgrade,
+              });
+              moneyGained += reward;
+
+              if (shouldResetCombo(newLastKillTime, timestamp)) {
+                shouldResetComboFlag = true;
+                comboIncrement = 1;
+              } else {
+                comboIncrement++;
+              }
+              newLastKillTime = timestamp;
+
+              const effectiveCombo = shouldResetComboFlag
+                ? 1
+                : combo + comboIncrement;
+              scoreGained += calculateScoreWithCombo(
+                enemy.reward,
+                effectiveCombo,
+              );
+            } else {
+              newEnemies = newEnemies.map((e) =>
+                e.id === enemy.id ? { ...e, health: newHealth } : e,
+              );
+            }
+          }
+        }
+      }
+    }
+
+    // Clean up cooldowns for enemies that no longer exist
+    const existingEnemyIds = new Set(newEnemies.map((e) => e.id));
+    for (const enemyId of this.trapDamageCooldowns.keys()) {
+      if (!existingEnemyIds.has(enemyId)) {
+        this.trapDamageCooldowns.delete(enemyId);
+      }
+    }
+
+    return {
+      comboIncrement,
+      damageNumberIdCounter: damageNumberIdCounter + damageNumbers.length,
+      damageNumbers,
+      enemies: newEnemies,
+      lastKillTime: newLastKillTime,
+      moneyGained,
+      particleIdCounter: particleIdCounter + particles.length,
+      particles,
+      placeables: newPlaceables,
+      scoreGained,
+      shouldResetCombo: shouldResetComboFlag,
+    };
   }
 
   private checkLandmineCollisions(
@@ -199,6 +428,7 @@ export class CollisionSystem implements GameSystem {
           newEnemies = newEnemies.filter((e) => e.id !== enemy.id);
 
           const reward = calculateReward({
+            activeWavePowerUps: state.activeWavePowerUps,
             baseReward: enemy.reward,
             combo: 0, // Landmine doesn't get combo multiplier on reward
             runUpgrade: state.runUpgrade,
@@ -252,7 +482,7 @@ export class CollisionSystem implements GameSystem {
     timestamp: number,
     combo: number,
     lastKillTime: number,
-    _state: GameState,
+    state: GameState,
     damageNumberIdCounter: number,
     particleIdCounter: number,
   ) {
@@ -309,6 +539,7 @@ export class CollisionSystem implements GameSystem {
       );
 
       const damage = calculateDamage({
+        activeWavePowerUps: state.activeWavePowerUps,
         adjacentTowerCount: adjacentCount,
         powerup,
         runUpgrade,
@@ -390,6 +621,7 @@ export class CollisionSystem implements GameSystem {
 
         // Calculate rewards
         const reward = calculateReward({
+          activeWavePowerUps: state.activeWavePowerUps,
           baseReward: enemy.reward,
           combo: 0, // Reward doesn't scale with combo
           runUpgrade,

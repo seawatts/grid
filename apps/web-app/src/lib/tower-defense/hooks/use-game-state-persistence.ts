@@ -2,15 +2,17 @@ import { useCallback, useEffect, useState } from 'react';
 import type {
   Enemy,
   Landmine,
+  PlaceableItem,
   PlayerProgress,
   Position,
   PowerUp,
   RunUpgrade,
   Tower,
+  WavePowerUp,
 } from '../game-types';
 
 const STORAGE_KEY = 'grid_defense_game_state';
-const STORAGE_VERSION = 2;
+const STORAGE_VERSION = 3; // Incremented for placeables support
 
 export interface SavedGameState {
   version: number;
@@ -20,6 +22,8 @@ export interface SavedGameState {
   grid: string[][];
   towers: Tower[];
   unspawnedEnemies: Enemy[]; // Keep enemies that haven't spawned yet
+  placeables?: PlaceableItem[]; // Unified placeables system
+  // Legacy items (kept for backward compatibility)
   powerups: PowerUp[];
   landmines: Landmine[];
 
@@ -44,6 +48,7 @@ export interface SavedGameState {
   // Upgrades and bonuses
   progress: PlayerProgress;
   runUpgrade?: RunUpgrade;
+  activeWavePowerUps?: WavePowerUp[];
 
   // Settings
   autoAdvance: boolean;
@@ -54,6 +59,8 @@ export interface SavedGameState {
   projectileIdCounter: number;
   particleIdCounter: number;
   damageNumberIdCounter: number;
+  placeableIdCounter?: number;
+  // Legacy counters (kept for backward compatibility)
   powerupIdCounter: number;
   landmineIdCounter: number;
 }
@@ -118,9 +125,54 @@ export function useGameStatePersistence() {
 
       const parsed = JSON.parse(saved) as SavedGameState;
 
-      // Version check
-      if (parsed.version !== STORAGE_VERSION) {
-        console.warn('Saved game version mismatch, clearing saved state');
+      // Version check and migration
+      if (parsed.version < STORAGE_VERSION) {
+        // Migrate from old version
+        if (parsed.version === 2) {
+          // Migrate from version 2 to 3: convert landmines/powerups to placeables
+          const migratedPlaceables: PlaceableItem[] = [];
+          let placeableIdCounter = 0;
+
+          // Convert landmines
+          if (parsed.landmines) {
+            for (const landmine of parsed.landmines) {
+              migratedPlaceables.push({
+                category: 'trap',
+                damage: landmine.damage,
+                id: placeableIdCounter++,
+                positions: [{ x: landmine.position.x, y: landmine.position.y }],
+                type: 'landmine',
+              });
+            }
+          }
+
+          // Convert powerups
+          if (parsed.powerups) {
+            for (const powerup of parsed.powerups) {
+              migratedPlaceables.push({
+                boost: powerup.boost,
+                category: 'powerup',
+                id: placeableIdCounter++,
+                isTowerBound: powerup.isTowerBound,
+                positions: [{ x: powerup.position.x, y: powerup.position.y }],
+                remainingWaves: powerup.remainingWaves,
+                type: 'powerNode',
+              });
+            }
+          }
+
+          parsed.placeables = migratedPlaceables;
+          parsed.placeableIdCounter = placeableIdCounter;
+          parsed.version = STORAGE_VERSION;
+        } else {
+          console.warn('Saved game version too old, clearing saved state');
+          clearSavedGame();
+          return null;
+        }
+      } else if (parsed.version > STORAGE_VERSION) {
+        console.warn(
+          'Saved game version newer than current, clearing saved state',
+        );
         clearSavedGame();
         return null;
       }

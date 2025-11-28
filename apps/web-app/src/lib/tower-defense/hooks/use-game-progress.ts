@@ -57,9 +57,27 @@ export function useGameProgress() {
     }));
   };
 
+  const recordMapRating = (mapId: string, stars: 1 | 2 | 3) => {
+    setProgress((prev) => {
+      const currentRating = prev.mapRatings[mapId] ?? 0;
+      // Only update if the new rating is better than the current one
+      if (stars > currentRating) {
+        return {
+          ...prev,
+          mapRatings: {
+            ...prev.mapRatings,
+            [mapId]: stars,
+          },
+        };
+      }
+      return prev;
+    });
+  };
+
   return {
     earnTechPoints,
     progress,
     purchaseUpgrade,
+    recordMapRating,
   };
 }

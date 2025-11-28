@@ -1,4 +1,5 @@
-import type { Position } from './game-types';
+import { getBlockedPositionsFromPlaceables } from './constants/placeables';
+import type { PlaceableItem, Position } from './game-types';
 
 export function findPath(
   start: Position,
@@ -109,22 +110,43 @@ export function findPath(
   return null;
 }
 
+/**
+ * Combines tower positions with blocking placeables for pathfinding
+ */
+export function combineBlockedPositions(
+  towerPositions: Position[],
+  placeables?: PlaceableItem[],
+): Position[] {
+  const blocked = [...towerPositions];
+  if (placeables) {
+    const placeablePositions = getBlockedPositionsFromPlaceables(placeables);
+    blocked.push(...placeablePositions);
+  }
+  return blocked;
+}
+
 export function findPathsForMultipleStartsAndGoals(
   starts: Position[],
   goals: Position[],
   towerPositions: Position[],
   gridSize: number,
+  placeables?: PlaceableItem[],
 ): (Position[] | null)[] {
+  const allBlockedPositions = combineBlockedPositions(
+    towerPositions,
+    placeables,
+  );
+
   // If only one goal, just return paths from each start to that goal
   if (goals.length === 1) {
     return starts.map((start) =>
-      findPath(start, goals, towerPositions, gridSize),
+      findPath(start, goals, allBlockedPositions, gridSize),
     );
   }
 
   // Calculate all possible paths from each start to each goal
   const pathMatrix: (Position[] | null)[][] = starts.map((start) =>
-    goals.map((goal) => findPath(start, [goal], towerPositions, gridSize)),
+    goals.map((goal) => findPath(start, [goal], allBlockedPositions, gridSize)),
   );
 
   // Track which goals have been assigned

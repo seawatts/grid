@@ -5,23 +5,30 @@ import {
   START_MONEY,
   TOWER_STATS,
 } from '../constants/balance';
+import { itemBlocksPath } from '../constants/placeables';
 import {
   createDefaultProgress,
   withProgressDefaults,
 } from '../constants/progress';
 import { getMapById } from '../game-maps';
 import type {
+  ItemCategory,
   Landmine,
+  PlaceableItem,
   Position,
   PowerUp,
+  PowerupType,
   Tower,
   TowerType,
+  TrapType,
+  WavePowerUp,
 } from '../game-types';
 import type { SavedGameState } from '../hooks/use-game-state-persistence';
 import { hasTowerOnPowerup } from '../utils/powerups';
 import type { GameConfig, GameState } from './types';
 
 const createInitialState = (): GameState => ({
+  activeWavePowerUps: [],
   autoAdvance: false,
   combo: 0,
   damageNumberIdCounter: 0,
@@ -41,6 +48,9 @@ const createInitialState = (): GameState => ({
   obstacles: [],
   particleIdCounter: 0,
   particles: [],
+  pendingPowerUpSelection: false,
+  placeableIdCounter: 0,
+  placeables: [],
   powerupIdCounter: 0,
   powerups: [],
   progress: createDefaultProgress(),
@@ -92,7 +102,15 @@ interface GameStore extends GameState {
   updateDamageNumbers: (damageNumbers: GameState['damageNumbers']) => void;
 
   // Items actions
-  setSelectedItem: (item: PowerUp | Landmine | null) => void;
+  setSelectedItem: (item: PlaceableItem | PowerUp | Landmine | null) => void;
+  updatePlaceables: (placeables: PlaceableItem[]) => void;
+  getPlaceablesByCategory: (category: ItemCategory) => PlaceableItem[];
+  getPlaceablesByType: (type: TrapType | PowerupType) => PlaceableItem[];
+  getPlaceablesAtPosition: (pos: Position) => PlaceableItem[];
+  getBlockingPlaceables: () => PlaceableItem[];
+  getNextPlaceableId: () => number;
+  setPlaceableIdCounter: (counter: number) => void;
+  // Legacy methods (kept for backward compatibility)
   updatePowerups: (powerups: PowerUp[]) => void;
   updateLandmines: (landmines: Landmine[]) => void;
 
@@ -122,12 +140,16 @@ interface GameStore extends GameState {
   getNextProjectileId: () => number;
   getNextParticleId: () => number;
   getNextDamageNumberId: () => number;
+  getNextPlaceableId: () => number;
+  // Legacy methods (kept for backward compatibility)
   getNextPowerupId: () => number;
   getNextLandmineId: () => number;
   setProjectileIdCounter: (counter: number) => void;
   setDamageNumberIdCounter: (counter: number) => void;
   setParticleIdCounter: (counter: number) => void;
   setEnemyIdCounter: (counter: number) => void;
+  setPlaceableIdCounter: (counter: number) => void;
+  // Legacy methods (kept for backward compatibility)
   setPowerupIdCounter: (counter: number) => void;
   setLandmineIdCounter: (counter: number) => void;
 
@@ -138,6 +160,11 @@ interface GameStore extends GameState {
 
   // Timing
   updateLastKillTime: (time: number) => void;
+
+  // Wave power-up actions
+  addWavePowerUp: (powerUp: WavePowerUp) => void;
+  removeExpiredWavePowerUps: () => void;
+  setPendingPowerUpSelection: (pending: boolean) => void;
 
   // Persistence actions
   getSaveableState: () => Partial<SavedGameState>;
@@ -162,6 +189,33 @@ export const useGameStore = create<GameStore>((set, get) => ({
         money: state.money - TOWER_STATS[tower.type].cost,
         powerups: bindPowerupsToTowers(state.powerups, nextTowers),
         towers: nextTowers,
+      };
+    }),
+
+  // Wave power-up actions
+  addWavePowerUp: (powerUp) =>
+    set((state) => {
+      // Apply immediate effects
+      let newMoney = state.money;
+      let newLives = state.lives;
+
+      if (powerUp.effect.type === 'addMoney') {
+        newMoney += powerUp.effect.value;
+      } else if (powerUp.effect.type === 'addLives') {
+        newLives += powerUp.effect.value;
+      }
+
+      // Initialize wavesRemaining for non-permanent power-ups
+      const powerUpWithDuration: WavePowerUp = {
+        ...powerUp,
+        wavesRemaining:
+          powerUp.duration === 'permanent' ? undefined : powerUp.duration,
+      };
+
+      return {
+        activeWavePowerUps: [...state.activeWavePowerUps, powerUpWithDuration],
+        lives: newLives,
+        money: newMoney,
       };
     }),
 
@@ -199,6 +253,11 @@ export const useGameStore = create<GameStore>((set, get) => ({
     );
   },
 
+  getBlockingPlaceables: () => {
+    const state = get();
+    return state.placeables.filter((item) => itemBlocksPath(item));
+  },
+
   getNextDamageNumberId: () => {
     const id = get().damageNumberIdCounter;
     set((state) => ({
@@ -225,6 +284,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
     return id;
   },
 
+  getNextPlaceableId: () => {
+    const id = get().placeableIdCounter;
+    set((state) => ({ placeableIdCounter: state.placeableIdCounter + 1 }));
+    return id;
+  },
+
   getNextPowerupId: () => {
     const id = get().powerupIdCounter;
     set((state) => ({ powerupIdCounter: state.powerupIdCounter + 1 }));
@@ -244,10 +309,32 @@ export const useGameStore = create<GameStore>((set, get) => ({
     return id;
   },
 
+  getPlaceablesAtPosition: (pos) => {
+    const state = get();
+    return state.placeables.filter((item) =>
+      item.positions.some(
+        (p) =>
+          Math.floor(p.x) === Math.floor(pos.x) &&
+          Math.floor(p.y) === Math.floor(pos.y),
+      ),
+    );
+  },
+
+  getPlaceablesByCategory: (category) => {
+    const state = get();
+    return state.placeables.filter((item) => item.category === category);
+  },
+
+  getPlaceablesByType: (type) => {
+    const state = get();
+    return state.placeables.filter((item) => item.type === type);
+  },
+
   // Persistence actions
   getSaveableState: () => {
     const state = get();
     return {
+      activeWavePowerUps: state.activeWavePowerUps,
       autoAdvance: state.autoAdvance,
       damageNumberIdCounter: state.damageNumberIdCounter,
       enemyIdCounter: state.enemyIdCounter,
@@ -263,6 +350,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
       money: state.money,
       obstacles: state.obstacles,
       particleIdCounter: state.particleIdCounter,
+      placeableIdCounter: state.placeableIdCounter,
+      placeables: state.placeables,
       powerupIdCounter: state.powerupIdCounter,
       powerups: state.powerups,
       progress: state.progress,
@@ -318,6 +407,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       (runUpgrade?.effect.type === 'startLives' ? runUpgrade.effect.value : 0);
 
     set({
+      activeWavePowerUps: [],
       autoAdvance: false,
       combo: 0,
       damageNumberIdCounter: 0,
@@ -337,6 +427,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
       obstacles: selectedMap.obstacles,
       particleIdCounter: 0,
       particles: [],
+      pendingPowerUpSelection: false,
+      placeableIdCounter: 0,
+      placeables: [],
       powerupIdCounter: 0,
       powerups: [],
       progress: effectiveProgress,
@@ -361,6 +454,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   loadSavedState: (savedState: SavedGameState, _mapId: string) => {
     set({
+      activeWavePowerUps: savedState.activeWavePowerUps ?? [],
       autoAdvance: savedState.autoAdvance,
       combo: 0,
       damageNumberIdCounter: savedState.damageNumberIdCounter,
@@ -381,6 +475,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
       obstacles: savedState.obstacles,
       particleIdCounter: savedState.particleIdCounter,
       particles: [],
+      pendingPowerUpSelection: false,
+      placeableIdCounter: savedState.placeableIdCounter ?? 0,
+      placeables: savedState.placeables ?? [],
       powerupIdCounter: savedState.powerupIdCounter,
       powerups: bindPowerupsToTowers(savedState.powerups, savedState.towers),
       progress: withProgressDefaults(savedState.progress),
@@ -403,6 +500,32 @@ export const useGameStore = create<GameStore>((set, get) => ({
       wave: savedState.wave,
     });
   },
+
+  removeExpiredWavePowerUps: () =>
+    set((state) => {
+      const activePowerUps = state.activeWavePowerUps.filter((powerUp) => {
+        if (powerUp.duration === 'permanent') {
+          return true;
+        }
+        // Remove if wavesRemaining is 0 or less
+        return (powerUp.wavesRemaining ?? 0) > 0;
+      });
+
+      // Decrement wavesRemaining for non-permanent power-ups
+      const updatedPowerUps = activePowerUps.map((powerUp) => {
+        if (powerUp.duration === 'permanent') {
+          return powerUp;
+        }
+        return {
+          ...powerUp,
+          wavesRemaining: (powerUp.wavesRemaining ?? 0) - 1,
+        };
+      });
+
+      return {
+        activeWavePowerUps: updatedPowerUps,
+      };
+    }),
 
   removeTower: (towerId) =>
     set((state) => {
@@ -437,6 +560,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
   // Game state actions
   setMoney: (money) => set({ money }),
   setParticleIdCounter: (counter) => set({ particleIdCounter: counter }),
+
+  setPendingPowerUpSelection: (pending) =>
+    set({ pendingPowerUpSelection: pending }),
+  setPlaceableIdCounter: (counter) => set({ placeableIdCounter: counter }),
   setPowerupIdCounter: (counter) => set({ powerupIdCounter: counter }),
 
   setProjectileIdCounter: (counter) => set({ projectileIdCounter: counter }),
@@ -465,6 +592,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   // Visual effects actions
   updateParticles: (particles) => set({ particles }),
+  updatePlaceables: (placeables) => set({ placeables }),
   updatePowerups: (powerups) =>
     set((state) => ({
       powerups: bindPowerupsToTowers(powerups, state.towers),

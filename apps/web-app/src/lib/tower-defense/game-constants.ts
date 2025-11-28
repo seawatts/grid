@@ -45,10 +45,8 @@ export const ENEMY_STATS = {
 export const ADJACENT_TOWER_BONUS = 0.15; // 15% damage boost per adjacent tower
 
 export const WAVE_COMPLETION_BONUS = 50; // Bonus money per wave completed
-export const POWERUP_BOOST = 1.5; // 50% damage boost for towers on powerups
-export const LANDMINE_DAMAGE = 100; // Damage dealt by landmines
-export const POWERUPS_PER_WAVE = 3; // Number of powerups to spawn per wave
-export const LANDMINES_PER_WAVE = 4; // Number of landmines to spawn per wave
+export const POWERUP_BOOST = 1.5; // 50% damage boost for towers on powerups (legacy constant, now in placeables config)
+// Note: Item-specific constants (damage, frequency) are now in constants/placeables.ts
 
 export const COMBO_WINDOW = 2000; // Time in ms to keep combo alive
 

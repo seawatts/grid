@@ -50,6 +50,7 @@ export type DamageNumber = {
   color: string;
 };
 
+// Legacy types (kept for backward compatibility during migration)
 export type PowerUp = {
   id: number;
   position: Position;
@@ -64,12 +65,55 @@ export type Landmine = {
   damage: number;
 };
 
+// Unified Placeable Item System
+export type ItemCategory = 'trap' | 'powerup';
+export type TrapType = 'landmine' | 'gridBug' | 'stream';
+export type PowerupType = 'powerNode';
+
+// Base placeable item type
+export type PlaceableItem = {
+  id: number;
+  category: ItemCategory;
+  type: TrapType | PowerupType;
+  positions: Position[]; // Multi-cell support
+} & (
+  | {
+      category: 'trap';
+      type: TrapType;
+      damage: number;
+    }
+  | {
+      category: 'powerup';
+      type: PowerupType;
+      boost: number; // Damage multiplier
+      remainingWaves: number;
+      isTowerBound: boolean;
+    }
+);
+
+// Type guards
+export function isTrapItem(
+  item: PlaceableItem,
+): item is PlaceableItem & { category: 'trap' } {
+  return item.category === 'trap';
+}
+
+export function isPowerupItem(
+  item: PlaceableItem,
+): item is PlaceableItem & { category: 'powerup' } {
+  return item.category === 'powerup';
+}
+
 export type UpgradeType =
   | 'powerNodePotency'
   | 'powerNodeFrequency'
   | 'powerNodePersistence'
   | 'landmineDamage'
-  | 'landmineFrequency';
+  | 'landmineFrequency'
+  | 'gridBugDamage'
+  | 'gridBugFrequency'
+  | 'streamLength'
+  | 'streamFrequency';
 
 export type UpgradeLevel = 0 | 1 | 2 | 3 | 4;
 
@@ -98,7 +142,36 @@ export type RunUpgrade = {
   };
 };
 
+export type WavePowerUpEffectType =
+  | 'damageMult'
+  | 'fireRateMult'
+  | 'rewardMult'
+  | 'addMoney'
+  | 'addLives'
+  | 'towerRangeMult'
+  | 'towerRangeAdd';
+
+export type WavePowerUpDuration = number | 'permanent'; // number = waves remaining, 'permanent' = rest of run
+export type WavePowerUpStacking = 'additive' | 'multiplicative' | 'replace';
+
+export type WavePowerUp = {
+  id: string;
+  name: string;
+  description: string;
+  icon: 'money' | 'health' | 'damage' | 'speed' | 'reward' | 'range';
+  effect: {
+    type: WavePowerUpEffectType;
+    value: number;
+  };
+  duration: WavePowerUpDuration;
+  stacking: WavePowerUpStacking;
+  wavesRemaining?: number; // Track remaining waves for non-permanent power-ups
+};
+
+export type MapRating = 0 | 1 | 2 | 3;
+
 export type PlayerProgress = {
   techPoints: number;
   upgrades: Record<UpgradeType, UpgradeLevel>;
+  mapRatings: Record<string, MapRating>;
 };

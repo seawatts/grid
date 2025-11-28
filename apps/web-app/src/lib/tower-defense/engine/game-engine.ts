@@ -1,4 +1,5 @@
 import { MAX_WAVES } from '../constants/balance';
+import { POWERUP_CONFIGS } from '../constants/placeables';
 import type { GameState, SystemUpdateResult } from '../store/types';
 import { shouldResetCombo } from '../utils/calculations';
 import {
@@ -136,7 +137,7 @@ export class GameEngine {
     if (wasWaveActive && updates.isWaveActive === false) {
       this.applySystemUpdate(
         updates,
-        this.itemSystem.generateWaveItems(currentState, 1, false),
+        this.itemSystem.generatePlaceables(currentState, 1, false),
       );
       currentState = { ...state, ...updates };
     }
@@ -195,7 +196,12 @@ export class GameEngine {
 
     return {
       ...waveUpdates,
-      ...(powerupUpdates ? { powerups: powerupUpdates } : {}),
+      ...(powerupUpdates?.powerups
+        ? { powerups: powerupUpdates.powerups }
+        : {}),
+      ...(powerupUpdates?.placeables
+        ? { placeables: powerupUpdates.placeables }
+        : {}),
       wave: nextWave,
     };
   }
@@ -209,7 +215,8 @@ export class GameEngine {
     count = 1,
     clearExisting = true,
   ): SystemUpdateResult {
-    return this.itemSystem.generateWaveItems(state, count, clearExisting);
+    // Use new unified system, fallback to legacy for backward compatibility
+    return this.itemSystem.generatePlaceables(state, count, clearExisting);
   }
 
   /**
@@ -220,9 +227,9 @@ export class GameEngine {
   }
 
   private applyPowerupDecay(state: GameState) {
+    // Update legacy powerups
     const lifetime = getPowerupLifetime(state.progress);
-
-    return state.powerups
+    const updatedLegacyPowerups = state.powerups
       .map((powerup) => ensurePowerupFields(powerup, lifetime))
       .map((powerup) => {
         const bound = hasTowerOnPowerup(powerup, state.towers);
@@ -238,5 +245,48 @@ export class GameEngine {
         };
       })
       .filter((powerup) => powerup.isTowerBound || powerup.remainingWaves > 0);
+
+    // Update placeable powerups
+    const updatedPlaceables = state.placeables
+      .map((item) => {
+        if (item.category === 'powerup') {
+          const config =
+            POWERUP_CONFIGS[item.type as keyof typeof POWERUP_CONFIGS];
+          if (!config) return item;
+
+          // Check if bound to tower
+          const bound = item.positions.some((pos) =>
+            state.towers.some(
+              (tower) =>
+                tower.position.x === pos.x && tower.position.y === pos.y,
+            ),
+          );
+
+          if (bound) {
+            return { ...item, isTowerBound: true };
+          }
+
+          const remaining = Math.max(item.remainingWaves - 1, 0);
+          return {
+            ...item,
+            isTowerBound: false,
+            remainingWaves: remaining,
+          };
+        }
+        return item;
+      })
+      .filter((item) => {
+        if (item.category === 'powerup') {
+          return item.isTowerBound || item.remainingWaves > 0;
+        }
+        return true; // Keep all traps
+      });
+
+    // Return as SystemUpdateResult
+    const result: SystemUpdateResult = {
+      placeables: updatedPlaceables,
+      powerups: updatedLegacyPowerups,
+    };
+    return result;
   }
 }

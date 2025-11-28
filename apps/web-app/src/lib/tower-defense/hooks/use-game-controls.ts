@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import type { Tower } from '../game-types';
-import { findPath } from '../pathfinding';
+import { combineBlockedPositions, findPath } from '../pathfinding';
 import { useGameStore } from '../store/game-store';
 import { canPlaceTower } from '../utils/validators';
 
@@ -28,12 +28,16 @@ export function useGameControls() {
         return;
       }
 
-      // Calculate new blocked positions
+      // Calculate new blocked positions (include blocking placeables)
       const newTowerPositions = [
         ...store.towers.map((t) => t.position),
         { x, y },
       ];
-      const allBlockedPositions = [...newTowerPositions, ...store.obstacles];
+      const baseBlockedPositions = [...newTowerPositions, ...store.obstacles];
+      const allBlockedPositions = combineBlockedPositions(
+        baseBlockedPositions,
+        store.placeables,
+      );
 
       // Update enemy paths for spawned enemies
       const updatedSpawnedEnemies = store.spawnedEnemies.map((enemy) => {
@@ -106,7 +110,19 @@ export function useGameControls() {
         return;
       }
 
-      // Check if clicked on an item
+      // Check if clicked on a placeable (unified system)
+      const clickedPlaceable = store.placeables.find((item) =>
+        item.positions.some((pos) => pos.x === x && pos.y === y),
+      );
+
+      if (clickedPlaceable) {
+        store.setSelectedItem(clickedPlaceable);
+        store.setSelectedTower(null);
+        store.setSelectedTowerType(null);
+        return;
+      }
+
+      // Legacy item checks (for backward compatibility)
       const clickedPowerup = store.powerups.find(
         (p) => p.position.x === x && p.position.y === y,
       );

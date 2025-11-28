@@ -1,5 +1,11 @@
 import { ENEMY_STATS } from '../game-constants';
-import type { EnemyType, TowerType } from '../game-types';
+import type {
+  EnemyType,
+  PlaceableItem,
+  TowerType,
+  TrapType,
+} from '../game-types';
+import { isPowerupItem, isTrapItem } from '../game-types';
 
 export interface TowerColors {
   background: string;
@@ -45,11 +51,25 @@ export function getProjectileColor(type: TowerType): string {
   return colorMap[type];
 }
 
-export function getDamageNumberColor(type: TowerType | 'landmine'): string {
+export function getDamageNumberColor(
+  type: TowerType | TrapType | 'landmine',
+): string {
   if (type === 'landmine') {
     return 'rgb(239, 68, 68)';
   }
 
+  // Trap colors
+  const trapColors: Record<TrapType, string> = {
+    gridBug: 'rgb(6, 182, 212)', // Cyan for Tron theme
+    landmine: 'rgb(239, 68, 68)',
+    stream: 'rgb(168, 85, 247)', // Purple for Tron theme
+  };
+
+  if (trapColors[type as TrapType]) {
+    return trapColors[type as TrapType];
+  }
+
+  // Tower colors
   const colorMap: Record<TowerType, string> = {
     basic: 'rgb(6, 182, 212)',
     bomb: 'rgb(236, 72, 153)',
@@ -57,7 +77,7 @@ export function getDamageNumberColor(type: TowerType | 'landmine'): string {
     sniper: 'rgb(34, 197, 94)',
   };
 
-  return colorMap[type];
+  return colorMap[type as TowerType] ?? 'rgb(255, 255, 255)';
 }
 
 export function getEnemyColor(type: EnemyType): string {
@@ -129,4 +149,69 @@ export function getLandmineTier(damage: number): TierInfo {
     icon: '💣',
     tier: 1,
   };
+}
+
+export function getGridBugTier(damage: number): TierInfo {
+  // Tron-themed Grid Bug visuals
+  if (damage > 100) {
+    return {
+      color: 'rgb(6, 182, 212)', // Cyan
+      glowColor: 'rgba(6, 182, 212, 0.8)',
+      icon: '◉', // Grid pattern icon
+      tier: 3,
+    };
+  }
+  if (damage > 50) {
+    return {
+      color: 'rgb(34, 211, 238)', // Light cyan
+      glowColor: 'rgba(34, 211, 238, 0.6)',
+      icon: '◉',
+      tier: 2,
+    };
+  }
+  return {
+    color: 'rgb(6, 182, 212)',
+    glowColor: 'rgba(6, 182, 212, 0.4)',
+    icon: '◉',
+    tier: 1,
+  };
+}
+
+export function getStreamTier(): TierInfo {
+  // Tron-themed Stream visuals
+  return {
+    color: 'rgb(168, 85, 247)', // Purple
+    glowColor: 'rgba(168, 85, 247, 0.6)',
+    icon: '━', // Stream/line icon
+    tier: 1,
+  };
+}
+
+/**
+ * Get tier information for a placeable item
+ */
+export function getPlaceableTier(item: PlaceableItem): TierInfo | null {
+  if (isTrapItem(item)) {
+    switch (item.type) {
+      case 'landmine':
+        return getLandmineTier(item.damage);
+      case 'gridBug':
+        return getGridBugTier(item.damage);
+      case 'stream':
+        return getStreamTier();
+      default:
+        return null;
+    }
+  }
+
+  if (isPowerupItem(item)) {
+    switch (item.type) {
+      case 'powerNode':
+        return getPowerupTier(item.boost);
+      default:
+        return null;
+    }
+  }
+
+  return null;
 }

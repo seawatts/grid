@@ -3,6 +3,7 @@ import type {
   Enemy,
   Landmine,
   Particle,
+  PlaceableItem,
   PlayerProgress,
   Position,
   PowerUp,
@@ -10,6 +11,7 @@ import type {
   RunUpgrade,
   Tower,
   TowerType,
+  WavePowerUp,
 } from '../game-types';
 
 export interface GameState {
@@ -21,6 +23,9 @@ export interface GameState {
   projectiles: Projectile[];
   particles: Particle[];
   damageNumbers: DamageNumber[];
+  // Unified placeable system
+  placeables: PlaceableItem[];
+  // Legacy types (kept for backward compatibility during migration)
   powerups: PowerUp[];
   landmines: Landmine[];
 
@@ -45,11 +50,13 @@ export interface GameState {
   // Upgrades and bonuses
   progress: PlayerProgress;
   runUpgrade?: RunUpgrade;
+  activeWavePowerUps: WavePowerUp[];
+  pendingPowerUpSelection: boolean;
 
   // UI state
   selectedTowerType: TowerType | null;
   selectedTower: Tower | null;
-  selectedItem: PowerUp | Landmine | null;
+  selectedItem: PlaceableItem | PowerUp | Landmine | null;
 
   // Settings
   autoAdvance: boolean;
@@ -63,6 +70,8 @@ export interface GameState {
   projectileIdCounter: number;
   particleIdCounter: number;
   damageNumberIdCounter: number;
+  placeableIdCounter: number;
+  // Legacy counters (kept for backward compatibility)
   powerupIdCounter: number;
   landmineIdCounter: number;
 
@@ -83,6 +92,8 @@ export interface SystemUpdateResult {
   projectiles?: Projectile[];
   particles?: Particle[];
   damageNumbers?: DamageNumber[];
+  placeables?: PlaceableItem[];
+  // Legacy types (kept for backward compatibility)
   powerups?: PowerUp[];
   landmines?: Landmine[];
   money?: number;
@@ -97,6 +108,8 @@ export interface SystemUpdateResult {
   particleIdCounter?: number;
   damageNumberIdCounter?: number;
   enemyIdCounter?: number;
+  placeableIdCounter?: number;
+  // Legacy counters (kept for backward compatibility)
   powerupIdCounter?: number;
   landmineIdCounter?: number;
 }

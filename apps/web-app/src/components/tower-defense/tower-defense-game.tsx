@@ -1,12 +1,15 @@
 'use client';
 
 import { Drawer, DrawerContent } from '@seawatts/ui/drawer';
+import { Zap } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import ActivePowerUpsDisplay from '~/components/tower-defense/active-powerups-display';
 import GameBoard from '~/components/tower-defense/game-board';
 import GameControls from '~/components/tower-defense/game-controls';
 import GameStats from '~/components/tower-defense/game-stats';
 import ItemDetails from '~/components/tower-defense/item-details';
 import PerformanceMonitor from '~/components/tower-defense/performance-monitor';
+import PowerUpSelector from '~/components/tower-defense/power-up-selector';
 import SettingsMenu from '~/components/tower-defense/settings-menu';
 import TowerManagement from '~/components/tower-defense/tower-management';
 import TowerSelector from '~/components/tower-defense/tower-selector';
@@ -15,10 +18,12 @@ import {
   MAX_CELL_SIZE,
   MIN_CELL_SIZE,
 } from '~/lib/tower-defense/constants/visuals';
+import { selectRandomPowerUps } from '~/lib/tower-defense/constants/wave-powerups';
 import type {
   PlayerProgress,
   Position,
   RunUpgrade,
+  WavePowerUp,
 } from '~/lib/tower-defense/game-types';
 import { useGameControls } from '~/lib/tower-defense/hooks/use-game-controls';
 import { useGameEngine } from '~/lib/tower-defense/hooks/use-game-engine';
@@ -29,21 +34,25 @@ import { setupStressTest } from '~/lib/tower-defense/utils/stress-test';
 
 interface TowerDefenseGameProps {
   mapId: string;
-  runUpgrade?: RunUpgrade;
+  initialPowerUp?: WavePowerUp;
+  runUpgrade?: RunUpgrade; // Kept for backward compatibility with resumed games
   isEntering?: boolean;
   isResuming?: boolean;
   onQuit?: () => void;
   progress: PlayerProgress;
   onEarnTP: (amount: number) => void;
+  onRecordMapRating?: (mapId: string, stars: 1 | 2 | 3) => void;
 }
 
 export default function TowerDefenseGame({
   mapId,
+  initialPowerUp,
   runUpgrade,
   isEntering = false,
   isResuming = false,
   onQuit,
   progress,
+  onRecordMapRating,
 }: TowerDefenseGameProps) {
   // UI state
   const [cellSize, setCellSize] = useState(28);
@@ -51,8 +60,13 @@ export default function TowerDefenseGame({
   const [showSettings, setShowSettings] = useState(false);
   const [showGrid, setShowGrid] = useState(false);
   const [showUI, setShowUI] = useState(false);
+  const [showActivePowerUps, setShowActivePowerUps] = useState(false);
   const [debugPaths, setDebugPaths] = useState<Position[][]>([]);
   const [animatedPathLengths, setAnimatedPathLengths] = useState<number[]>([]);
+  const initialLivesRef = useRef<number | null>(null);
+  const hasRecordedRatingRef = useRef(false);
+  const prevIsWaveActiveRef = useRef<boolean>(false);
+  const [availablePowerUps, setAvailablePowerUps] = useState<WavePowerUp[]>([]);
 
   // Game store
   const {
@@ -62,6 +76,7 @@ export default function TowerDefenseGame({
     projectiles,
     particles,
     damageNumbers,
+    placeables,
     powerups,
     landmines,
     money,
@@ -92,6 +107,11 @@ export default function TowerDefenseGame({
     toggleDamageNumbers,
     getSaveableState,
     loadSavedState,
+    pendingPowerUpSelection,
+    setPendingPowerUpSelection,
+    removeExpiredWavePowerUps,
+    addWavePowerUp,
+    activeWavePowerUps,
   } = useGameStore();
 
   // Persistence
@@ -112,6 +132,27 @@ export default function TowerDefenseGame({
   // Initialize game engine
   const { engine, startWave, resetGame } = useGameEngine(gameConfig);
 
+  // Apply initial power-up when game starts (not when resuming)
+  const hasAppliedInitialPowerUp = useRef(false);
+  useEffect(() => {
+    if (
+      initialPowerUp &&
+      !isResuming &&
+      gameStatus === 'playing' &&
+      !hasAppliedInitialPowerUp.current &&
+      grid.length > 0
+    ) {
+      // Add the initial power-up to active power-ups
+      addWavePowerUp(initialPowerUp);
+      hasAppliedInitialPowerUp.current = true;
+    }
+  }, [initialPowerUp, isResuming, gameStatus, addWavePowerUp, grid.length]);
+
+  // Reset flag when map changes
+  useEffect(() => {
+    hasAppliedInitialPowerUp.current = false;
+  }, []);
+
   // Game controls
   const { handleCellClick, upgradeTower, deleteTower } = useGameControls();
 
@@ -129,6 +170,22 @@ export default function TowerDefenseGame({
     return cleanup;
   }, [engine]);
 
+  // Reset rating tracking when starting a new game (mapId changes)
+  useEffect(() => {
+    if (!isResuming) {
+      initialLivesRef.current = null;
+      hasRecordedRatingRef.current = false;
+    }
+  }, [isResuming]);
+
+  // Track initial lives when game starts (capture after initialization)
+  useEffect(() => {
+    if (!isResuming && lives > 0 && initialLivesRef.current === null) {
+      initialLivesRef.current = lives;
+      hasRecordedRatingRef.current = false;
+    }
+  }, [lives, isResuming]);
+
   // Load saved state when resuming
   useEffect(() => {
     if (isResuming && !hasLoadedSavedState.current) {
@@ -136,6 +193,9 @@ export default function TowerDefenseGame({
       if (savedState) {
         loadSavedState(savedState, mapId);
         hasLoadedSavedState.current = true;
+        // Don't track initial lives for resumed games - we can't accurately
+        // calculate lives lost, so we won't record ratings for resumed games
+        hasRecordedRatingRef.current = true; // Prevent rating recording
       }
     }
   }, [isResuming, loadGame, loadSavedState, mapId]);
@@ -154,6 +214,28 @@ export default function TowerDefenseGame({
 
     return () => clearInterval(interval);
   }, [gameStatus, getSaveableState, saveGame, mapId]);
+
+  // Calculate and record rating when game is won
+  useEffect(() => {
+    if (
+      gameStatus === 'won' &&
+      onRecordMapRating &&
+      initialLivesRef.current !== null &&
+      !hasRecordedRatingRef.current
+    ) {
+      const livesLost = initialLivesRef.current - lives;
+      let stars: 1 | 2 | 3;
+      if (livesLost === 0) {
+        stars = 3;
+      } else if (livesLost === 1) {
+        stars = 2;
+      } else {
+        stars = 1;
+      }
+      onRecordMapRating(mapId, stars);
+      hasRecordedRatingRef.current = true;
+    }
+  }, [gameStatus, lives, mapId, onRecordMapRating]);
 
   // Clear saved state when game ends
   useEffect(() => {
@@ -212,28 +294,64 @@ export default function TowerDefenseGame({
     }
   }, [grid.length]);
 
-  // Update debug paths when towers change
+  // Update debug paths when towers or blocking placeables change
   useEffect(() => {
     if (grid.length === 0) return;
 
-    const blockedPositions = [...towers.map((t) => t.position), ...obstacles];
+    const baseBlockedPositions = [
+      ...towers.map((t) => t.position),
+      ...obstacles,
+    ];
 
     const newPaths = findPathsForMultipleStartsAndGoals(
       startPositions,
       goalPositions,
-      blockedPositions,
+      baseBlockedPositions,
       grid.length,
+      placeables,
     ).filter((path): path is Position[] => path !== null);
 
     setDebugPaths(newPaths);
     setAnimatedPathLengths(newPaths.map(() => newPaths[0]?.length || 0));
-  }, [grid, towers, obstacles, startPositions, goalPositions]);
+  }, [grid, towers, obstacles, placeables, startPositions, goalPositions]);
 
-  // Auto-advance to next wave
+  // Detect wave completion and trigger power-up selection
+  useEffect(() => {
+    const wasWaveActive = prevIsWaveActiveRef.current;
+    const isWaveComplete =
+      wasWaveActive && !isWaveActive && wave > 0 && wave < MAX_WAVES;
+
+    prevIsWaveActiveRef.current = isWaveActive;
+
+    if (isWaveComplete && gameStatus === 'playing') {
+      // Remove expired power-ups first
+      removeExpiredWavePowerUps();
+      // Generate random power-ups for selection
+      const randomPowerUps = selectRandomPowerUps(3);
+      setAvailablePowerUps(randomPowerUps);
+      // Trigger power-up selection
+      setPendingPowerUpSelection(true);
+    }
+  }, [
+    isWaveActive,
+    wave,
+    gameStatus,
+    removeExpiredWavePowerUps,
+    setPendingPowerUpSelection,
+  ]);
+
+  const handlePowerUpSelect = (powerUp: WavePowerUp) => {
+    addWavePowerUp(powerUp);
+    setPendingPowerUpSelection(false);
+    setAvailablePowerUps([]);
+  };
+
+  // Auto-advance to next wave (only if not waiting for power-up selection)
   useEffect(() => {
     if (
       autoAdvance &&
       !isWaveActive &&
+      !pendingPowerUpSelection &&
       wave > 0 &&
       wave < MAX_WAVES &&
       spawnedEnemies.length === 0 &&
@@ -248,6 +366,7 @@ export default function TowerDefenseGame({
   }, [
     autoAdvance,
     isWaveActive,
+    pendingPowerUpSelection,
     wave,
     spawnedEnemies.length,
     gameStatus,
@@ -334,14 +453,35 @@ export default function TowerDefenseGame({
           className={`mb-2 sm:mb-6 flex flex-row gap-1 sm:gap-4 justify-between items-center transition-all duration-700 ${showUI ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}
           style={{ transitionDelay: '300ms' }}
         >
-          <GameStats
-            combo={combo}
-            lives={lives}
-            maxWaves={MAX_WAVES}
-            money={money}
-            score={score}
-            wave={wave}
-          />
+          <div className="flex items-center gap-2">
+            <GameStats
+              combo={combo}
+              lives={lives}
+              maxWaves={MAX_WAVES}
+              money={money}
+              score={score}
+              wave={wave}
+            />
+
+            {activeWavePowerUps.length > 0 && (
+              <button
+                className="relative flex items-center gap-1 px-2 py-1.5 rounded border border-purple-400/30 bg-purple-500/10 hover:bg-purple-500/20 transition-all group"
+                onClick={() => setShowActivePowerUps(true)}
+                style={{
+                  boxShadow: '0 0 10px rgba(168, 85, 247, 0.2)',
+                }}
+                type="button"
+              >
+                <Zap className="w-4 h-4 text-purple-400" />
+                <span className="text-white font-bold text-sm">
+                  {activeWavePowerUps.length}
+                </span>
+                {activeWavePowerUps.length > 0 && (
+                  <span className="absolute -top-1 -right-1 w-2 h-2 bg-purple-400 rounded-full animate-pulse" />
+                )}
+              </button>
+            )}
+          </div>
 
           {runUpgrade && (
             <div className="hidden sm:flex items-center gap-2 px-3 py-1 rounded bg-cyan-950/30 border border-cyan-500/20 text-xs font-mono text-cyan-400">
@@ -382,6 +522,7 @@ export default function TowerDefenseGame({
               landmines={landmines}
               onCellClick={handleCellClick}
               particles={particles}
+              placeables={placeables}
               powerups={powerups}
               projectiles={projectiles}
               selectedTower={selectedTower}
@@ -465,6 +606,20 @@ export default function TowerDefenseGame({
           onTogglePerformanceMonitor={togglePerformanceMonitor}
           showDamageNumbers={showDamageNumbers}
           showPerformanceMonitor={showPerformanceMonitor}
+        />
+      )}
+
+      {pendingPowerUpSelection && availablePowerUps.length > 0 && (
+        <PowerUpSelector
+          onSelect={handlePowerUpSelect}
+          powerUps={availablePowerUps}
+        />
+      )}
+
+      {showActivePowerUps && (
+        <ActivePowerUpsDisplay
+          activePowerUps={activeWavePowerUps}
+          onClose={() => setShowActivePowerUps(false)}
         />
       )}
 
