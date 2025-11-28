@@ -8,7 +8,6 @@ import type {
   Enemy,
   Particle,
   PlaceableItem,
-  Tower,
 } from '../../game-types';
 import type {
   GameState,
@@ -283,17 +282,19 @@ export class CollisionSystem implements GameSystem {
             // Create explosion particles
             if (this.particlePool && trap.positions.length > 0) {
               const trapPos = trap.positions[0];
-              for (let i = 0; i < PARTICLE_COUNT_LANDMINE; i++) {
-                const angle = (Math.PI * 2 * i) / PARTICLE_COUNT_LANDMINE;
-                const speed = 0.08 + Math.random() * 0.05;
-                this.particlePool.spawn(
-                  trapPos.x,
-                  trapPos.y,
-                  Math.cos(angle) * speed,
-                  Math.sin(angle) * speed,
-                  40,
-                  'rgb(239, 68, 68)',
-                );
+              if (trapPos) {
+                for (let i = 0; i < PARTICLE_COUNT_LANDMINE; i++) {
+                  const angle = (Math.PI * 2 * i) / PARTICLE_COUNT_LANDMINE;
+                  const speed = 0.08 + Math.random() * 0.05;
+                  this.particlePool.spawn(
+                    trapPos.x,
+                    trapPos.y,
+                    Math.cos(angle) * speed,
+                    Math.sin(angle) * speed,
+                    40,
+                    'rgb(239, 68, 68)',
+                  );
+                }
               }
             }
 

@@ -151,6 +151,7 @@ export default function TowerManagement({
     format: (value: number) => string;
     nextValue: number | null;
     diffFormat?: (diff: number) => string;
+    isBuff: boolean;
   };
 
   const statCards: StatCard[] = [
@@ -221,7 +222,7 @@ export default function TowerManagement({
         Base {`${base % 1 === 0 ? base : base.toFixed(1)}${suffix}`} •{' '}
         <span className="text-cyan-300 font-semibold">
           {symbol}
-          {`${Math.abs(delta % 1 === 0 ? delta : delta.toFixed(1))}${suffix}`}{' '}
+          {`${delta % 1 === 0 ? Math.abs(delta) : Math.abs(delta).toFixed(1)}${suffix}`}{' '}
           {percent > 0 && `(${symbol}${percent}%)`}
         </span>
       </div>

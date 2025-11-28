@@ -48,7 +48,9 @@ export default function GridCell({
 
   // Get tier info for placeables (prioritize first one if multiple)
   const placeableTier =
-    cellPlaceables.length > 0 ? getPlaceableTier(cellPlaceables[0]) : null;
+    cellPlaceables.length > 0 && cellPlaceables[0]
+      ? getPlaceableTier(cellPlaceables[0])
+      : null;
 
   // Legacy tier calculations (for backward compatibility)
   const powerupTier = powerup ? getPowerupTier(powerup.boost) : null;

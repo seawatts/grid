@@ -108,8 +108,6 @@ interface GameStore extends GameState {
   getPlaceablesByType: (type: TrapType | PowerupType) => PlaceableItem[];
   getPlaceablesAtPosition: (pos: Position) => PlaceableItem[];
   getBlockingPlaceables: () => PlaceableItem[];
-  getNextPlaceableId: () => number;
-  setPlaceableIdCounter: (counter: number) => void;
   // Legacy methods (kept for backward compatibility)
   updatePowerups: (powerups: PowerUp[]) => void;
   updateLandmines: (landmines: Landmine[]) => void;

@@ -71,7 +71,8 @@ export default function ItemDetails({ item, onClose }: ItemDetailsProps) {
       itemName = 'POWER NODE';
       itemDescription =
         'Energy concentration detected. Towers placed on this node receive a significant damage output boost.';
-    } else {
+    } else if ('damage' in item) {
+      // Legacy landmine
       damage = item.damage;
       itemName = 'PROXIMITY MINE';
       itemDescription =
