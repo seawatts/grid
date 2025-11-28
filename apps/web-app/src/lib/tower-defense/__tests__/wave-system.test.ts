@@ -4,6 +4,7 @@ import type { GameState } from '../store/types';
 
 describe('Wave System Integration Tests', () => {
   const createTestState = (overrides: Partial<GameState> = {}): GameState => ({
+    activeWavePowerUps: [],
     autoAdvance: false,
     combo: 0,
     damageNumberIdCounter: 0,
@@ -25,6 +26,9 @@ describe('Wave System Integration Tests', () => {
     obstacles: [],
     particleIdCounter: 0,
     particles: [],
+    pendingPowerUpSelection: false,
+    placeableIdCounter: 0,
+    placeables: [],
     powerupIdCounter: 0,
     powerups: [],
     progress: {
