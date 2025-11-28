@@ -10,6 +10,7 @@ import type { GameState } from '../store/types';
  */
 export function createTestState(overrides: Partial<GameState> = {}): GameState {
   const baseState: GameState = {
+    activeWavePowerUps: [],
     autoAdvance: false,
     combo: 0,
     damageNumberIdCounter: 0,
@@ -31,6 +32,9 @@ export function createTestState(overrides: Partial<GameState> = {}): GameState {
     obstacles: [],
     particleIdCounter: 0,
     particles: [],
+    pendingPowerUpSelection: false,
+    placeableIdCounter: 0,
+    placeables: [],
     powerupIdCounter: 0,
     powerups: [],
     progress: createDefaultProgress(),

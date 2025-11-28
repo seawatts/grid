@@ -30,11 +30,15 @@ describe('Wave System Integration Tests', () => {
     progress: {
       techPoints: 0,
       upgrades: {
+        gridBugDamage: 0,
+        gridBugFrequency: 0,
         landmineDamage: 0,
         landmineFrequency: 0,
         powerNodeFrequency: 0,
         powerNodePersistence: 0,
         powerNodePotency: 0,
+        streamFrequency: 0,
+        streamLength: 0,
       },
     },
     projectileIdCounter: 0,
