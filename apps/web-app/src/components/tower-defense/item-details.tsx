@@ -38,8 +38,8 @@ export default function ItemDetails({ item, onClose }: ItemDetailsProps) {
   let damage: number | undefined;
   let remainingWaves: number | undefined;
   let isTowerBound: boolean | undefined;
-  let itemName: string;
-  let itemDescription: string;
+  let itemName = 'Unknown';
+  let itemDescription = '';
 
   if (isPlaceable) {
     if (isPlaceablePowerup) {

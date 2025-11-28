@@ -8,6 +8,7 @@ import type {
   Enemy,
   Particle,
   PlaceableItem,
+  Tower,
 } from '../../game-types';
 import type {
   GameState,

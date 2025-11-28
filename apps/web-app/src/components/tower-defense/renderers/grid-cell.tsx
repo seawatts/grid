@@ -9,6 +9,7 @@ import {
   getLandmineTier,
   getPlaceableTier,
   getPowerupTier,
+  type TierInfo,
 } from '~/lib/tower-defense/utils/rendering';
 
 interface GridCellProps {
@@ -57,7 +58,8 @@ export default function GridCell({
   const landmineTier = landmine ? getLandmineTier(landmine.damage) : null;
 
   // Use placeable tier if available, otherwise fall back to legacy
-  const displayTier = placeableTier || powerupTier || landmineTier;
+  const displayTier: TierInfo | null =
+    placeableTier || powerupTier || landmineTier;
   const isPlaceablePowerup = cellPlaceables.some(
     (item) => item.category === 'powerup',
   );
