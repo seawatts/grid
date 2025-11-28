@@ -29,6 +29,7 @@ describe('Enemy System Integration Tests', () => {
     powerupIdCounter: 0,
     powerups: [],
     progress: {
+      mapRatings: {},
       techPoints: 0,
       upgrades: {
         gridBugDamage: 0,

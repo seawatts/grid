@@ -50,13 +50,18 @@ describe('Item System Tests', () => {
       const stateNoUpgrade = createTestState({
         powerups: [],
         progress: {
+          mapRatings: {},
           techPoints: 0,
           upgrades: {
+            gridBugDamage: 0,
+            gridBugFrequency: 0,
             landmineDamage: 0,
             landmineFrequency: 0,
             powerNodeFrequency: 0, // No upgrade
             powerNodePersistence: 0,
             powerNodePotency: 0,
+            streamFrequency: 0,
+            streamLength: 0,
           },
         },
       });
@@ -64,6 +69,7 @@ describe('Item System Tests', () => {
       const stateWithUpgrade = createTestState({
         powerups: [],
         progress: {
+          mapRatings: {},
           techPoints: 0,
           upgrades: {
             gridBugDamage: 0,
@@ -96,13 +102,18 @@ describe('Item System Tests', () => {
       const stateNoUpgrade = createTestState({
         powerups: [],
         progress: {
+          mapRatings: {},
           techPoints: 0,
           upgrades: {
+            gridBugDamage: 0,
+            gridBugFrequency: 0,
             landmineDamage: 0,
             landmineFrequency: 0,
             powerNodeFrequency: 0,
             powerNodePersistence: 0,
             powerNodePotency: 0, // No upgrade
+            streamFrequency: 0,
+            streamLength: 0,
           },
         },
       });
@@ -110,6 +121,7 @@ describe('Item System Tests', () => {
       const stateWithUpgrade = createTestState({
         powerups: [],
         progress: {
+          mapRatings: {},
           techPoints: 0,
           upgrades: {
             gridBugDamage: 0,
@@ -278,13 +290,18 @@ describe('Item System Tests', () => {
       const stateNoUpgrade = createTestState({
         landmines: [],
         progress: {
+          mapRatings: {},
           techPoints: 0,
           upgrades: {
+            gridBugDamage: 0,
+            gridBugFrequency: 0,
             landmineDamage: 0,
             landmineFrequency: 0, // No upgrade
             powerNodeFrequency: 0,
             powerNodePersistence: 0,
             powerNodePotency: 0,
+            streamFrequency: 0,
+            streamLength: 0,
           },
         },
       });
@@ -292,6 +309,7 @@ describe('Item System Tests', () => {
       const stateWithUpgrade = createTestState({
         landmines: [],
         progress: {
+          mapRatings: {},
           techPoints: 0,
           upgrades: {
             gridBugDamage: 0,
@@ -324,13 +342,18 @@ describe('Item System Tests', () => {
       const stateNoUpgrade = createTestState({
         landmines: [],
         progress: {
+          mapRatings: {},
           techPoints: 0,
           upgrades: {
+            gridBugDamage: 0,
+            gridBugFrequency: 0,
             landmineDamage: 0, // No upgrade
             landmineFrequency: 0,
             powerNodeFrequency: 0,
             powerNodePersistence: 0,
             powerNodePotency: 0,
+            streamFrequency: 0,
+            streamLength: 0,
           },
         },
       });
@@ -338,6 +361,7 @@ describe('Item System Tests', () => {
       const stateWithUpgrade = createTestState({
         landmines: [],
         progress: {
+          mapRatings: {},
           techPoints: 0,
           upgrades: {
             gridBugDamage: 0,
