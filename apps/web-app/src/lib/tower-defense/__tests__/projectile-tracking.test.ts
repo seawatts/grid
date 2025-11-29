@@ -36,7 +36,11 @@ describe('Projectile Tracking Integration Tests', () => {
     powerupIdCounter: 0,
     powerups: [],
     progress: {
+      energy: 100,
+      energyRecoveryRate: 1,
+      lastEnergyUpdate: Date.now(),
       mapRatings: {},
+      maxEnergy: 100,
       techPoints: 0,
       upgrades: {
         energyRecoveryRate: 0,

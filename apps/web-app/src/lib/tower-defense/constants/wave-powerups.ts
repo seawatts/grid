@@ -191,8 +191,8 @@ export function selectRandomPowerUps(count = 3): WavePowerUp[] {
 
   for (const powerup of WAVE_POWERUP_POOL) {
     const rarity = powerup.rarity ?? 'common';
-    if (rarity in byRarity) {
-      byRarity[rarity].push(powerup);
+    if (rarity in byRarity && byRarity[rarity]) {
+      byRarity[rarity]!.push(powerup);
     }
   }
 
@@ -206,20 +206,20 @@ export function selectRandomPowerUps(count = 3): WavePowerUp[] {
   ) {
     // Select a rarity using weighted selection
     const selectedRarity = selectRarityByWeight();
-    const poolForRarity = byRarity[selectedRarity].filter(
-      (p) => !usedIds.has(p.id),
-    );
+    const poolForRarity =
+      byRarity[selectedRarity]?.filter((p) => !usedIds.has(p.id)) ?? [];
 
     if (poolForRarity.length === 0) {
       // If no powerups of this rarity are available, try another
       const availableRarities = Object.keys(byRarity).filter(
         (r): r is keyof typeof byRarity =>
-          r in byRarity && byRarity[r].some((p) => !usedIds.has(p.id)),
+          r in byRarity && byRarity[r]?.some((p) => !usedIds.has(p.id)),
       );
       if (availableRarities.length === 0) break;
 
       const fallbackRarity =
         availableRarities[Math.floor(Math.random() * availableRarities.length)];
+      if (!fallbackRarity || !(fallbackRarity in byRarity)) break;
       const fallbackPool = byRarity[fallbackRarity]?.filter(
         (p) => !usedIds.has(p.id),
       );

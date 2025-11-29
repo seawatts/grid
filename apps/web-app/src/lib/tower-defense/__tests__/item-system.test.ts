@@ -50,7 +50,11 @@ describe('Item System Tests', () => {
       const stateNoUpgrade = createTestState({
         powerups: [],
         progress: {
+          energy: 100,
+          energyRecoveryRate: 1,
+          lastEnergyUpdate: Date.now(),
           mapRatings: {},
+          maxEnergy: 100,
           techPoints: 0,
           upgrades: {
             energyRecoveryRate: 0,
@@ -71,7 +75,11 @@ describe('Item System Tests', () => {
       const stateWithUpgrade = createTestState({
         powerups: [],
         progress: {
+          energy: 100,
+          energyRecoveryRate: 1,
+          lastEnergyUpdate: Date.now(),
           mapRatings: {},
+          maxEnergy: 100,
           techPoints: 0,
           upgrades: {
             energyRecoveryRate: 0,
@@ -106,7 +114,11 @@ describe('Item System Tests', () => {
       const stateNoUpgrade = createTestState({
         powerups: [],
         progress: {
+          energy: 100,
+          energyRecoveryRate: 1,
+          lastEnergyUpdate: Date.now(),
           mapRatings: {},
+          maxEnergy: 100,
           techPoints: 0,
           upgrades: {
             energyRecoveryRate: 0,
@@ -127,7 +139,11 @@ describe('Item System Tests', () => {
       const stateWithUpgrade = createTestState({
         powerups: [],
         progress: {
+          energy: 100,
+          energyRecoveryRate: 1,
+          lastEnergyUpdate: Date.now(),
           mapRatings: {},
+          maxEnergy: 100,
           techPoints: 0,
           upgrades: {
             energyRecoveryRate: 0,
@@ -298,7 +314,11 @@ describe('Item System Tests', () => {
       const stateNoUpgrade = createTestState({
         landmines: [],
         progress: {
+          energy: 100,
+          energyRecoveryRate: 1,
+          lastEnergyUpdate: Date.now(),
           mapRatings: {},
+          maxEnergy: 100,
           techPoints: 0,
           upgrades: {
             energyRecoveryRate: 0,
@@ -319,7 +339,11 @@ describe('Item System Tests', () => {
       const stateWithUpgrade = createTestState({
         landmines: [],
         progress: {
+          energy: 100,
+          energyRecoveryRate: 1,
+          lastEnergyUpdate: Date.now(),
           mapRatings: {},
+          maxEnergy: 100,
           techPoints: 0,
           upgrades: {
             energyRecoveryRate: 0,
@@ -354,7 +378,11 @@ describe('Item System Tests', () => {
       const stateNoUpgrade = createTestState({
         landmines: [],
         progress: {
+          energy: 100,
+          energyRecoveryRate: 1,
+          lastEnergyUpdate: Date.now(),
           mapRatings: {},
+          maxEnergy: 100,
           techPoints: 0,
           upgrades: {
             energyRecoveryRate: 0,
@@ -375,7 +403,11 @@ describe('Item System Tests', () => {
       const stateWithUpgrade = createTestState({
         landmines: [],
         progress: {
+          energy: 100,
+          energyRecoveryRate: 1,
+          lastEnergyUpdate: Date.now(),
           mapRatings: {},
+          maxEnergy: 100,
           techPoints: 0,
           upgrades: {
             energyRecoveryRate: 0,
