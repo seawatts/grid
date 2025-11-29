@@ -192,7 +192,7 @@ export function selectRandomPowerUps(count = 3): WavePowerUp[] {
   for (const powerup of WAVE_POWERUP_POOL) {
     const rarity = powerup.rarity ?? 'common';
     if (rarity in byRarity && byRarity[rarity]) {
-      byRarity[rarity]!.push(powerup);
+      byRarity[rarity]?.push(powerup);
     }
   }
 
