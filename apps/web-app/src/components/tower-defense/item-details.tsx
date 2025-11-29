@@ -7,10 +7,17 @@ import {
   POWERUP_CONFIGS,
   TRAP_CONFIGS,
 } from '~/lib/tower-defense/constants/placeables';
+import {
+  getRarityBorderColor,
+  getRarityColor,
+  getRarityGlowColor,
+  getRarityName,
+} from '~/lib/tower-defense/constants/rarity';
 import type {
   Landmine,
   PlaceableItem,
   PowerUp,
+  PowerupRarity,
 } from '~/lib/tower-defense/game-types';
 import { isPowerupItem, isTrapItem } from '~/lib/tower-defense/game-types';
 import { useGameStore } from '~/lib/tower-defense/store/game-store';
@@ -38,6 +45,7 @@ export default function ItemDetails({ item, onClose }: ItemDetailsProps) {
   let damage: number | undefined;
   let remainingWaves: number | undefined;
   let isTowerBound: boolean | undefined;
+  let rarity: string | undefined;
   let itemName = 'Unknown';
   let itemDescription = '';
 
@@ -47,6 +55,7 @@ export default function ItemDetails({ item, onClose }: ItemDetailsProps) {
       boost = item.boost;
       remainingWaves = item.remainingWaves;
       isTowerBound = item.isTowerBound;
+      rarity = item.rarity;
       itemName = config?.name ?? 'Power Node';
       itemDescription =
         'Energy concentration detected. Towers placed on this node receive a significant damage output boost.';
@@ -117,15 +126,38 @@ export default function ItemDetails({ item, onClose }: ItemDetailsProps) {
     <>
       <DrawerHeader className="border-b border-cyan-500/30 px-4 py-4">
         <div className="flex justify-between items-center w-full">
-          <DrawerTitle
-            className="text-lg font-bold uppercase m-0"
-            style={{
-              color: isPowerUp ? 'rgb(250, 204, 21)' : 'rgb(239, 68, 68)',
-              textShadow: `0 0 10px ${isPowerUp ? 'rgba(250, 204, 21, 0.5)' : 'rgba(239, 68, 68, 0.5)'}`,
-            }}
-          >
-            {itemName}
-          </DrawerTitle>
+          <div className="flex flex-col gap-1">
+            <DrawerTitle
+              className="text-lg font-bold uppercase m-0"
+              style={{
+                color: isPowerUp
+                  ? rarity
+                    ? getRarityColor(rarity as PowerupRarity)
+                    : 'rgb(250, 204, 21)'
+                  : 'rgb(239, 68, 68)',
+                textShadow: isPowerUp
+                  ? rarity
+                    ? `0 0 10px ${getRarityGlowColor(rarity as PowerupRarity)}`
+                    : '0 0 10px rgba(250, 204, 21, 0.5)'
+                  : '0 0 10px rgba(239, 68, 68, 0.5)',
+              }}
+            >
+              {itemName}
+            </DrawerTitle>
+            {isPowerUp && rarity && (
+              <div
+                className="text-xs font-bold uppercase px-2 py-0.5 rounded inline-block w-fit"
+                style={{
+                  backgroundColor: `${getRarityColor(rarity as PowerupRarity)}20`,
+                  border: `1px solid ${getRarityBorderColor(rarity as PowerupRarity)}`,
+                  color: getRarityColor(rarity as PowerupRarity),
+                  textShadow: `0 0 6px ${getRarityGlowColor(rarity as PowerupRarity)}`,
+                }}
+              >
+                {getRarityName(rarity as PowerupRarity)}
+              </div>
+            )}
+          </div>
           <DrawerClose asChild>
             <Button
               className="text-gray-400 hover:text-white hover:bg-white/10 h-8 w-8"

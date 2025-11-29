@@ -155,6 +155,7 @@ export function useGameStatePersistence() {
                 id: placeableIdCounter++,
                 isTowerBound: powerup.isTowerBound,
                 positions: [{ x: powerup.position.x, y: powerup.position.y }],
+                rarity: 'common', // Default to common for migrated powerups
                 remainingWaves: powerup.remainingWaves,
                 type: 'powerNode',
               });

@@ -88,6 +88,7 @@ export type PlaceableItem = {
       boost: number; // Damage multiplier
       remainingWaves: number;
       isTowerBound: boolean;
+      rarity: PowerupRarity;
     }
 );
 
@@ -113,7 +114,9 @@ export type UpgradeType =
   | 'gridBugDamage'
   | 'gridBugFrequency'
   | 'streamLength'
-  | 'streamFrequency';
+  | 'streamFrequency'
+  | 'energyRecoveryRate'
+  | 'maxEnergy';
 
 export type UpgradeLevel = 0 | 1 | 2 | 3 | 4;
 
@@ -154,6 +157,8 @@ export type WavePowerUpEffectType =
 export type WavePowerUpDuration = number | 'permanent'; // number = waves remaining, 'permanent' = rest of run
 export type WavePowerUpStacking = 'additive' | 'multiplicative' | 'replace';
 
+export type PowerupRarity = 'common' | 'rare' | 'epic' | 'legendary';
+
 export type WavePowerUp = {
   id: string;
   name: string;
@@ -166,6 +171,7 @@ export type WavePowerUp = {
   duration: WavePowerUpDuration;
   stacking: WavePowerUpStacking;
   wavesRemaining?: number; // Track remaining waves for non-permanent power-ups
+  rarity?: PowerupRarity; // Optional for backward compatibility, defaults to 'common'
 };
 
 export type MapRating = 0 | 1 | 2 | 3;
@@ -174,4 +180,8 @@ export type PlayerProgress = {
   techPoints: number;
   upgrades: Record<UpgradeType, UpgradeLevel>;
   mapRatings: Record<string, MapRating>;
+  energy: number;
+  maxEnergy: number;
+  lastEnergyUpdate: number;
+  energyRecoveryRate: number;
 };

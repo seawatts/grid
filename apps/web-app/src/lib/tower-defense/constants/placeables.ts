@@ -1,9 +1,11 @@
 import type {
   PlaceableItem,
   PlayerProgress,
+  PowerupRarity,
   PowerupType,
   TrapType,
 } from '../game-types';
+import { getRarityMultiplier, selectRarityByWeight } from './rarity';
 import { UPGRADES } from './upgrades';
 
 export interface TrapBehavior {
@@ -39,9 +41,10 @@ export interface PowerupConfig {
   upgradePotencyId: string;
   upgradeFrequencyId: string;
   upgradePersistenceId: string;
-  getBoost: (progress: PlayerProgress) => number;
+  getBoost: (progress: PlayerProgress, rarity?: PowerupRarity) => number;
   getFrequency: (progress: PlayerProgress) => number;
   getLifetime: (progress: PlayerProgress) => number;
+  getRarity: () => PowerupRarity;
 }
 
 export const TRAP_CONFIGS: Record<TrapType, TrapConfig> = {
@@ -119,9 +122,14 @@ export const POWERUP_CONFIGS: Record<PowerupType, PowerupConfig> = {
       lifetimeBased: true,
       towerBound: true,
     },
-    getBoost: (progress) => {
+    getBoost: (progress, rarity) => {
       const level = progress.upgrades.powerNodePotency ?? 0;
-      return UPGRADES.powerNodePotency?.effects[level] ?? 1.5;
+      const baseBoost = UPGRADES.powerNodePotency?.effects[level] ?? 1.5;
+      if (rarity) {
+        const multiplier = getRarityMultiplier(rarity);
+        return baseBoost * multiplier;
+      }
+      return baseBoost;
     },
     getFrequency: (progress) => {
       const level = progress.upgrades.powerNodeFrequency ?? 0;
@@ -131,6 +139,7 @@ export const POWERUP_CONFIGS: Record<PowerupType, PowerupConfig> = {
       const level = progress.upgrades.powerNodePersistence ?? 0;
       return UPGRADES.powerNodePersistence?.effects[level] ?? 3;
     },
+    getRarity: () => selectRarityByWeight(),
     name: 'Power Node',
     upgradeFrequencyId: 'powerNodeFrequency',
     upgradePersistenceId: 'powerNodePersistence',

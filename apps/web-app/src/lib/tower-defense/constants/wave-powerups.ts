@@ -1,4 +1,5 @@
 import type { WavePowerUp } from '../game-types';
+import { selectRarityByWeight } from './rarity';
 
 export const WAVE_POWERUP_POOL: WavePowerUp[] = [
   // Permanent damage boosts
@@ -9,6 +10,7 @@ export const WAVE_POWERUP_POOL: WavePowerUp[] = [
     icon: 'damage',
     id: 'permanent-damage-15',
     name: 'Overcharged Weapons',
+    rarity: 'common',
     stacking: 'additive',
   },
   {
@@ -18,6 +20,7 @@ export const WAVE_POWERUP_POOL: WavePowerUp[] = [
     icon: 'damage',
     id: 'permanent-damage-25',
     name: 'Supercharged Systems',
+    rarity: 'rare',
     stacking: 'additive',
   },
 
@@ -29,6 +32,7 @@ export const WAVE_POWERUP_POOL: WavePowerUp[] = [
     icon: 'damage',
     id: 'temp-damage-30-3',
     name: 'Tactical Overload',
+    rarity: 'epic',
     stacking: 'additive',
   },
   {
@@ -38,6 +42,7 @@ export const WAVE_POWERUP_POOL: WavePowerUp[] = [
     icon: 'damage',
     id: 'temp-damage-50-1',
     name: 'Burst Power',
+    rarity: 'legendary',
     stacking: 'additive',
   },
 
@@ -49,6 +54,7 @@ export const WAVE_POWERUP_POOL: WavePowerUp[] = [
     icon: 'speed',
     id: 'permanent-firerate-20',
     name: 'Rapid Fire Protocol',
+    rarity: 'rare',
     stacking: 'multiplicative',
   },
   {
@@ -58,6 +64,7 @@ export const WAVE_POWERUP_POOL: WavePowerUp[] = [
     icon: 'speed',
     id: 'temp-firerate-30-2',
     name: 'Speed Boost',
+    rarity: 'epic',
     stacking: 'multiplicative',
   },
 
@@ -69,6 +76,7 @@ export const WAVE_POWERUP_POOL: WavePowerUp[] = [
     icon: 'money',
     id: 'money-50',
     name: 'Emergency Funds',
+    rarity: 'common',
     stacking: 'additive',
   },
   {
@@ -78,6 +86,7 @@ export const WAVE_POWERUP_POOL: WavePowerUp[] = [
     icon: 'money',
     id: 'money-100',
     name: 'Windfall',
+    rarity: 'rare',
     stacking: 'additive',
   },
   {
@@ -87,6 +96,7 @@ export const WAVE_POWERUP_POOL: WavePowerUp[] = [
     icon: 'money',
     id: 'money-150',
     name: 'Major Funding',
+    rarity: 'epic',
     stacking: 'additive',
   },
 
@@ -98,6 +108,7 @@ export const WAVE_POWERUP_POOL: WavePowerUp[] = [
     icon: 'health',
     id: 'lives-5',
     name: 'Reinforcement',
+    rarity: 'common',
     stacking: 'additive',
   },
   {
@@ -107,6 +118,7 @@ export const WAVE_POWERUP_POOL: WavePowerUp[] = [
     icon: 'health',
     id: 'lives-10',
     name: 'Major Reinforcement',
+    rarity: 'rare',
     stacking: 'additive',
   },
 
@@ -118,6 +130,7 @@ export const WAVE_POWERUP_POOL: WavePowerUp[] = [
     icon: 'reward',
     id: 'permanent-reward-25',
     name: 'Bounty Hunter',
+    rarity: 'rare',
     stacking: 'additive',
   },
   {
@@ -127,6 +140,7 @@ export const WAVE_POWERUP_POOL: WavePowerUp[] = [
     icon: 'reward',
     id: 'temp-reward-50-2',
     name: 'Double Bounty',
+    rarity: 'epic',
     stacking: 'additive',
   },
 
@@ -138,6 +152,7 @@ export const WAVE_POWERUP_POOL: WavePowerUp[] = [
     icon: 'range',
     id: 'permanent-range-20',
     name: 'Extended Range',
+    rarity: 'rare',
     stacking: 'additive',
   },
   {
@@ -147,6 +162,7 @@ export const WAVE_POWERUP_POOL: WavePowerUp[] = [
     icon: 'range',
     id: 'temp-range-50-1',
     name: 'Long Range Mode',
+    rarity: 'legendary',
     stacking: 'additive',
   },
   {
@@ -156,14 +172,68 @@ export const WAVE_POWERUP_POOL: WavePowerUp[] = [
     icon: 'range',
     id: 'permanent-range-add-1',
     name: 'Range Extension',
+    rarity: 'epic',
     stacking: 'additive',
   },
 ];
 
 /**
- * Randomly selects 3 unique power-ups from the pool
+ * Randomly selects power-ups from the pool using weighted selection based on rarity
  */
 export function selectRandomPowerUps(count = 3): WavePowerUp[] {
-  const shuffled = [...WAVE_POWERUP_POOL].sort(() => Math.random() - 0.5);
-  return shuffled.slice(0, Math.min(count, WAVE_POWERUP_POOL.length));
+  // Group powerups by rarity
+  const byRarity: Record<string, WavePowerUp[]> = {
+    common: [],
+    epic: [],
+    legendary: [],
+    rare: [],
+  };
+
+  for (const powerup of WAVE_POWERUP_POOL) {
+    byRarity[powerup.rarity].push(powerup);
+  }
+
+  const selected: WavePowerUp[] = [];
+  const usedIds = new Set<string>();
+
+  // Select powerups using weighted rarity selection
+  while (
+    selected.length < count &&
+    selected.length < WAVE_POWERUP_POOL.length
+  ) {
+    // Select a rarity using weighted selection
+    const selectedRarity = selectRarityByWeight();
+    const poolForRarity = byRarity[selectedRarity].filter(
+      (p) => !usedIds.has(p.id),
+    );
+
+    if (poolForRarity.length === 0) {
+      // If no powerups of this rarity are available, try another
+      const availableRarities = Object.keys(byRarity).filter((r) =>
+        byRarity[r].some((p) => !usedIds.has(p.id)),
+      );
+      if (availableRarities.length === 0) break;
+
+      const fallbackRarity =
+        availableRarities[Math.floor(Math.random() * availableRarities.length)];
+      const fallbackPool = byRarity[fallbackRarity].filter(
+        (p) => !usedIds.has(p.id),
+      );
+      if (fallbackPool.length > 0) {
+        const selectedPowerup =
+          fallbackPool[Math.floor(Math.random() * fallbackPool.length)];
+        selected.push(selectedPowerup);
+        usedIds.add(selectedPowerup.id);
+      } else {
+        break;
+      }
+    } else {
+      const selectedPowerup =
+        poolForRarity[Math.floor(Math.random() * poolForRarity.length)];
+      selected.push(selectedPowerup);
+      usedIds.add(selectedPowerup.id);
+    }
+  }
+
+  return selected;
 }

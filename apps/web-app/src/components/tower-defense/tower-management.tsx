@@ -44,24 +44,24 @@ export default function TowerManagement({
 
   const towerColors = {
     basic: {
-      bg: 'rgba(6, 182, 212, 0.2)',
-      border: 'rgb(6, 182, 212)',
-      shadow: 'rgba(6, 182, 212, 0.5)',
+      bg: 'var(--tower-basic-bg)',
+      border: 'var(--tower-basic-border)',
+      shadow: 'var(--tower-basic-shadow)',
     },
     bomb: {
-      bg: 'rgba(236, 72, 153, 0.2)',
-      border: 'rgb(236, 72, 153)',
-      shadow: 'rgba(236, 72, 153, 0.5)',
+      bg: 'var(--tower-bomb-bg)',
+      border: 'var(--tower-bomb-border)',
+      shadow: 'var(--tower-bomb-shadow)',
     },
     slow: {
-      bg: 'rgba(168, 85, 247, 0.2)',
-      border: 'rgb(168, 85, 247)',
-      shadow: 'rgba(168, 85, 247, 0.5)',
+      bg: 'var(--tower-slow-bg)',
+      border: 'var(--tower-slow-border)',
+      shadow: 'var(--tower-slow-shadow)',
     },
     sniper: {
-      bg: 'rgba(34, 197, 94, 0.2)',
-      border: 'rgb(34, 197, 94)',
-      shadow: 'rgba(34, 197, 94, 0.5)',
+      bg: 'var(--tower-sniper-bg)',
+      border: 'var(--tower-sniper-border)',
+      shadow: 'var(--tower-sniper-shadow)',
     },
   };
 

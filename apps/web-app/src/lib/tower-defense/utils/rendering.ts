@@ -1,7 +1,9 @@
+import { getRarityTierInfo } from '../constants/rarity';
 import { ENEMY_STATS } from '../game-constants';
 import type {
   EnemyType,
   PlaceableItem,
+  PowerupRarity,
   TowerType,
   TrapType,
 } from '../game-types';
@@ -16,24 +18,24 @@ export interface TowerColors {
 export function getTowerColors(type: TowerType): TowerColors {
   const colorMap: Record<TowerType, TowerColors> = {
     basic: {
-      background: 'rgba(6, 182, 212, 0.3)',
-      border: 'rgb(6, 182, 212)',
-      boxShadow: 'rgba(6, 182, 212, 0.5)',
+      background: 'var(--tower-basic-bg)',
+      border: 'var(--tower-basic-border)',
+      boxShadow: 'var(--tower-basic-shadow)',
     },
     bomb: {
-      background: 'rgba(236, 72, 153, 0.3)',
-      border: 'rgb(236, 72, 153)',
-      boxShadow: 'rgba(236, 72, 153, 0.5)',
+      background: 'var(--tower-bomb-bg)',
+      border: 'var(--tower-bomb-border)',
+      boxShadow: 'var(--tower-bomb-shadow)',
     },
     slow: {
-      background: 'rgba(168, 85, 247, 0.3)',
-      border: 'rgb(168, 85, 247)',
-      boxShadow: 'rgba(168, 85, 247, 0.5)',
+      background: 'var(--tower-slow-bg)',
+      border: 'var(--tower-slow-border)',
+      boxShadow: 'var(--tower-slow-shadow)',
     },
     sniper: {
-      background: 'rgba(34, 197, 94, 0.3)',
-      border: 'rgb(34, 197, 94)',
-      boxShadow: 'rgba(34, 197, 94, 0.5)',
+      background: 'var(--tower-sniper-bg)',
+      border: 'var(--tower-sniper-border)',
+      boxShadow: 'var(--tower-sniper-shadow)',
     },
   };
 
@@ -42,10 +44,10 @@ export function getTowerColors(type: TowerType): TowerColors {
 
 export function getProjectileColor(type: TowerType): string {
   const colorMap: Record<TowerType, string> = {
-    basic: 'rgb(6, 182, 212)',
-    bomb: 'rgb(236, 72, 153)',
-    slow: 'rgb(168, 85, 247)',
-    sniper: 'rgb(34, 197, 94)',
+    basic: 'var(--tower-basic-color)',
+    bomb: 'var(--tower-bomb-color)',
+    slow: 'var(--tower-slow-color)',
+    sniper: 'var(--tower-sniper-color)',
   };
 
   return colorMap[type];
@@ -55,14 +57,14 @@ export function getDamageNumberColor(
   type: TowerType | TrapType | 'landmine',
 ): string {
   if (type === 'landmine') {
-    return 'rgb(239, 68, 68)';
+    return 'var(--trap-color)';
   }
 
-  // Trap colors
+  // Trap colors - all traps use red
   const trapColors: Record<TrapType, string> = {
-    gridBug: 'rgb(6, 182, 212)', // Cyan for Tron theme
-    landmine: 'rgb(239, 68, 68)',
-    stream: 'rgb(168, 85, 247)', // Purple for Tron theme
+    gridBug: 'var(--trap-color)',
+    landmine: 'var(--trap-color)',
+    stream: 'var(--trap-color)',
   };
 
   if (trapColors[type as TrapType]) {
@@ -71,10 +73,10 @@ export function getDamageNumberColor(
 
   // Tower colors
   const colorMap: Record<TowerType, string> = {
-    basic: 'rgb(6, 182, 212)',
-    bomb: 'rgb(236, 72, 153)',
-    slow: 'rgb(168, 85, 247)',
-    sniper: 'rgb(34, 197, 94)',
+    basic: 'var(--tower-basic-color)',
+    bomb: 'var(--tower-bomb-color)',
+    slow: 'var(--tower-slow-color)',
+    sniper: 'var(--tower-sniper-color)',
   };
 
   return colorMap[type as TowerType] ?? 'rgb(255, 255, 255)';
@@ -101,26 +103,45 @@ export interface TierInfo {
   icon: string;
 }
 
-export function getPowerupTier(boost: number): TierInfo {
+/**
+ * Get tier information for a powerup based on rarity (preferred) or boost value (fallback)
+ */
+export function getPowerupTier(
+  boost: number,
+  rarity?: PowerupRarity,
+): TierInfo {
+  // Use rarity if provided
+  if (rarity) {
+    const rarityTier = getRarityTierInfo(rarity);
+    // Override colors to yellow for all powerups
+    return {
+      ...rarityTier,
+      color: 'var(--powerup-color)',
+      glowColor: 'var(--powerup-glow-color)',
+    };
+  }
+
+  // Fallback to boost-based calculation for backward compatibility
+  // All powerups use yellow color
   if (boost > 2.0) {
     return {
-      color: 'rgb(236, 72, 153)',
-      glowColor: 'rgba(236, 72, 153, 0.6)',
+      color: 'var(--powerup-color)',
+      glowColor: 'var(--powerup-glow-color)',
       icon: '⚡⚡',
       tier: 3,
     };
   }
   if (boost > 1.5) {
     return {
-      color: 'rgb(250, 204, 21)',
-      glowColor: 'rgba(250, 204, 21, 0.6)',
+      color: 'var(--powerup-color)',
+      glowColor: 'var(--powerup-glow-color)',
       icon: '⚡',
       tier: 2,
     };
   }
   return {
-    color: 'rgb(250, 204, 21)',
-    glowColor: 'rgba(250, 204, 21, 0.6)',
+    color: 'var(--powerup-color)',
+    glowColor: 'var(--powerup-glow-color)',
     icon: '⚡',
     tier: 1,
   };
@@ -129,59 +150,59 @@ export function getPowerupTier(boost: number): TierInfo {
 export function getLandmineTier(damage: number): TierInfo {
   if (damage > 300) {
     return {
-      color: 'rgb(168, 85, 247)',
-      glowColor: 'rgba(168, 85, 247, 0.6)',
+      color: 'var(--trap-color)',
+      glowColor: 'var(--trap-glow-color)',
       icon: '💣',
       tier: 3,
     };
   }
   if (damage > 100) {
     return {
-      color: 'rgb(239, 68, 68)',
-      glowColor: 'rgba(239, 68, 68, 0.6)',
+      color: 'var(--trap-color)',
+      glowColor: 'var(--trap-glow-color)',
       icon: '💣',
       tier: 2,
     };
   }
   return {
-    color: 'rgb(239, 68, 68)',
-    glowColor: 'rgba(239, 68, 68, 0.6)',
+    color: 'var(--trap-color)',
+    glowColor: 'var(--trap-glow-color)',
     icon: '💣',
     tier: 1,
   };
 }
 
 export function getGridBugTier(damage: number): TierInfo {
-  // Tron-themed Grid Bug visuals
+  // All traps use red color
   if (damage > 100) {
     return {
-      color: 'rgb(6, 182, 212)', // Cyan
-      glowColor: 'rgba(6, 182, 212, 0.8)',
+      color: 'var(--trap-color)',
+      glowColor: 'var(--trap-glow-color)',
       icon: '◉', // Grid pattern icon
       tier: 3,
     };
   }
   if (damage > 50) {
     return {
-      color: 'rgb(34, 211, 238)', // Light cyan
-      glowColor: 'rgba(34, 211, 238, 0.6)',
+      color: 'var(--trap-color)',
+      glowColor: 'var(--trap-glow-color)',
       icon: '◉',
       tier: 2,
     };
   }
   return {
-    color: 'rgb(6, 182, 212)',
-    glowColor: 'rgba(6, 182, 212, 0.4)',
+    color: 'var(--trap-color)',
+    glowColor: 'var(--trap-glow-color)',
     icon: '◉',
     tier: 1,
   };
 }
 
 export function getStreamTier(): TierInfo {
-  // Tron-themed Stream visuals
+  // All traps use red color
   return {
-    color: 'rgb(168, 85, 247)', // Purple
-    glowColor: 'rgba(168, 85, 247, 0.6)',
+    color: 'var(--trap-color)',
+    glowColor: 'var(--trap-glow-color)',
     icon: '━', // Stream/line icon
     tier: 1,
   };
@@ -191,25 +212,47 @@ export function getStreamTier(): TierInfo {
  * Get tier information for a placeable item
  */
 export function getPlaceableTier(item: PlaceableItem): TierInfo | null {
+  let tierInfo: TierInfo | null = null;
+
   if (isTrapItem(item)) {
     switch (item.type) {
       case 'landmine':
-        return getLandmineTier(item.damage);
+        tierInfo = getLandmineTier(item.damage);
+        break;
       case 'gridBug':
-        return getGridBugTier(item.damage);
+        tierInfo = getGridBugTier(item.damage);
+        break;
       case 'stream':
-        return getStreamTier();
+        tierInfo = getStreamTier();
+        break;
       default:
         return null;
+    }
+    // Override all trap colors to red
+    if (tierInfo) {
+      return {
+        ...tierInfo,
+        color: 'var(--trap-color)',
+        glowColor: 'var(--trap-glow-color)',
+      };
     }
   }
 
   if (isPowerupItem(item)) {
     switch (item.type) {
       case 'powerNode':
-        return getPowerupTier(item.boost);
+        tierInfo = getPowerupTier(item.boost, item.rarity);
+        break;
       default:
         return null;
+    }
+    // Override all powerup colors to yellow
+    if (tierInfo) {
+      return {
+        ...tierInfo,
+        color: 'var(--powerup-color)',
+        glowColor: 'var(--powerup-glow-color)',
+      };
     }
   }
 

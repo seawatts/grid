@@ -215,20 +215,18 @@ export default function GridCell({
       {displayTier && (
         <div className="absolute inset-2 pointer-events-none">
           {isPlaceablePowerup && !hasTower && cell !== 'tower' ? (
-            // Powerup rendering (circular)
+            // Powerup rendering (circular) - uses rarity colors
             <div
               className="w-full h-full rounded-full animate-pulse"
               style={{
-                backgroundColor:
-                  displayTier.tier >= 3
-                    ? 'rgba(236, 72, 153, 0.3)'
-                    : 'rgba(250, 204, 21, 0.3)',
+                backgroundColor: `${displayTier.color}30`,
                 border: `2px solid ${displayTier.color}`,
                 boxShadow: `0 0 ${displayTier.tier * 15}px ${displayTier.glowColor}`,
               }}
             >
               <div
-                className={`absolute inset-0 flex items-center justify-center font-bold text-xs ${displayTier.tier >= 3 ? 'text-pink-400' : 'text-yellow-400'}`}
+                className="absolute inset-0 flex items-center justify-center font-bold text-xs"
+                style={{ color: displayTier.color }}
               >
                 {displayTier.icon}
               </div>
@@ -245,12 +243,8 @@ export default function GridCell({
                 animationDuration: displayTier.tier >= 3 ? '0.5s' : '1s',
                 backgroundColor:
                   displayTier.tier >= 3
-                    ? cellPlaceables[0]?.type === 'gridBug'
-                      ? 'rgba(6, 182, 212, 0.3)'
-                      : 'rgba(168, 85, 247, 0.3)'
-                    : cellPlaceables[0]?.type === 'gridBug'
-                      ? 'rgba(34, 211, 238, 0.3)'
-                      : 'rgba(239, 68, 68, 0.3)',
+                    ? 'var(--trap-bg-dark)'
+                    : 'var(--trap-bg-light)',
                 border: `2px solid ${displayTier.color}`,
                 boxShadow: `0 0 ${displayTier.tier * 15}px ${displayTier.glowColor}`,
               }}
@@ -278,9 +272,7 @@ export default function GridCell({
               ) : (
                 // Landmine: circular dot
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <div
-                    className={`w-1/2 h-1/2 rounded-full ${displayTier.tier >= 3 ? 'bg-purple-500' : 'bg-red-500'}`}
-                  />
+                  <div className="w-1/2 h-1/2 rounded-full bg-red-500" />
                 </div>
               )}
             </div>
@@ -294,16 +286,14 @@ export default function GridCell({
           <div
             className="w-full h-full rounded-full animate-pulse"
             style={{
-              backgroundColor:
-                powerupTier.tier >= 3
-                  ? 'rgba(236, 72, 153, 0.3)'
-                  : 'rgba(250, 204, 21, 0.3)',
+              backgroundColor: `${powerupTier.color}30`,
               border: `2px solid ${powerupTier.color}`,
               boxShadow: `0 0 ${powerupTier.tier * 15}px ${powerupTier.glowColor}`,
             }}
           >
             <div
-              className={`absolute inset-0 flex items-center justify-center font-bold text-xs ${powerupTier.tier >= 3 ? 'text-pink-400' : 'text-yellow-400'}`}
+              className="absolute inset-0 flex items-center justify-center font-bold text-xs"
+              style={{ color: powerupTier.color }}
             >
               {powerupTier.icon}
             </div>
@@ -320,16 +310,14 @@ export default function GridCell({
               animationDuration: landmineTier.tier >= 3 ? '0.5s' : '1s',
               backgroundColor:
                 landmineTier.tier >= 3
-                  ? 'rgba(168, 85, 247, 0.3)'
-                  : 'rgba(239, 68, 68, 0.3)',
+                  ? 'var(--trap-bg-dark)'
+                  : 'var(--trap-bg-light)',
               border: `2px solid ${landmineTier.color}`,
               boxShadow: `0 0 ${landmineTier.tier * 15}px ${landmineTier.glowColor}`,
             }}
           >
             <div className="absolute inset-0 flex items-center justify-center">
-              <div
-                className={`w-1/2 h-1/2 rounded-full ${landmineTier.tier >= 3 ? 'bg-purple-500' : 'bg-red-500'}`}
-              />
+              <div className="w-1/2 h-1/2 rounded-full bg-red-500" />
             </div>
           </div>
         </div>

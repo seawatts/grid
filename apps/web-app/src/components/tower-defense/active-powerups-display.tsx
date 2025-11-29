@@ -9,6 +9,12 @@ import {
   X,
   Zap,
 } from 'lucide-react';
+import {
+  getRarityBorderColor,
+  getRarityColor,
+  getRarityGlowColor,
+  getRarityName,
+} from '~/lib/tower-defense/constants/rarity';
 import type { WavePowerUp } from '~/lib/tower-defense/game-types';
 
 interface ActivePowerUpsDisplayProps {
@@ -166,18 +172,43 @@ export default function ActivePowerUpsDisplay({
             const uniqueKey = `${powerUp.id}-${
               powerUp.wavesRemaining ?? 'permanent'
             }-${index}`;
+            const rarity = powerUp.rarity ?? 'common';
+            const rarityColor = getRarityColor(rarity);
+            const rarityBorderColor = getRarityBorderColor(rarity);
+            const rarityGlowColor = getRarityGlowColor(rarity);
+            const rarityName = getRarityName(rarity);
 
             return (
               <div
-                className="bg-gray-900/50 border-2 border-cyan-500/30 rounded-lg p-4 flex flex-col gap-3"
+                className="bg-gray-900/50 border-2 rounded-lg p-4 flex flex-col gap-3 relative"
                 key={uniqueKey}
                 style={{
-                  boxShadow: '0 0 15px rgba(6, 182, 212, 0.2)',
+                  borderColor: `${rarityBorderColor}80`,
+                  boxShadow: `0 0 15px ${rarityGlowColor}`,
                 }}
               >
+                {/* Rarity badge */}
+                <div
+                  className="absolute top-2 right-2 px-2 py-0.5 rounded text-xs font-bold uppercase"
+                  style={{
+                    backgroundColor: `${rarityColor}20`,
+                    border: `1px solid ${rarityBorderColor}`,
+                    color: rarityColor,
+                    textShadow: `0 0 8px ${rarityGlowColor}`,
+                  }}
+                >
+                  {rarityName}
+                </div>
+
                 <div className="flex items-center gap-3">
-                  <div className="flex items-center justify-center w-10 h-10 rounded-full bg-cyan-500/20 border-2 border-cyan-400/50">
-                    <Icon className="w-5 h-5 text-cyan-400" />
+                  <div
+                    className="flex items-center justify-center w-10 h-10 rounded-full border-2"
+                    style={{
+                      backgroundColor: `${rarityColor}20`,
+                      borderColor: `${rarityBorderColor}80`,
+                    }}
+                  >
+                    <Icon className="w-5 h-5" style={{ color: rarityColor }} />
                   </div>
                   <div className="flex-1">
                     <h3 className="font-bold text-white text-sm">
@@ -190,7 +221,10 @@ export default function ActivePowerUpsDisplay({
                 </div>
 
                 <div className="flex flex-col gap-1 mt-2">
-                  <span className="text-cyan-400 text-xs font-mono font-bold">
+                  <span
+                    className="text-xs font-mono font-bold"
+                    style={{ color: rarityColor }}
+                  >
                     {effectText}
                   </span>
                   <span className="text-purple-400 text-xs font-mono">

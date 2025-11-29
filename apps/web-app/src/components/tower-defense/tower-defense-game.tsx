@@ -13,7 +13,10 @@ import PowerUpSelector from '~/components/tower-defense/power-up-selector';
 import SettingsMenu from '~/components/tower-defense/settings-menu';
 import TowerManagement from '~/components/tower-defense/tower-management';
 import TowerSelector from '~/components/tower-defense/tower-selector';
-import { MAX_WAVES } from '~/lib/tower-defense/constants/balance';
+import {
+  ENERGY_REWARD_ON_WIN,
+  MAX_WAVES,
+} from '~/lib/tower-defense/constants/balance';
 import {
   MAX_CELL_SIZE,
   MIN_CELL_SIZE,
@@ -41,6 +44,7 @@ interface TowerDefenseGameProps {
   onQuit?: () => void;
   progress: PlayerProgress;
   onEarnTP: (amount: number) => void;
+  onAddEnergy?: (amount: number) => void;
   onRecordMapRating?: (mapId: string, stars: 1 | 2 | 3) => void;
 }
 
@@ -52,6 +56,7 @@ export default function TowerDefenseGame({
   isResuming = false,
   onQuit,
   progress,
+  onAddEnergy,
   onRecordMapRating,
 }: TowerDefenseGameProps) {
   // UI state
@@ -236,6 +241,13 @@ export default function TowerDefenseGame({
       hasRecordedRatingRef.current = true;
     }
   }, [gameStatus, lives, mapId, onRecordMapRating]);
+
+  // Reward energy when game is won
+  useEffect(() => {
+    if (gameStatus === 'won' && onAddEnergy) {
+      onAddEnergy(ENERGY_REWARD_ON_WIN);
+    }
+  }, [gameStatus, onAddEnergy]);
 
   // Clear saved state when game ends
   useEffect(() => {

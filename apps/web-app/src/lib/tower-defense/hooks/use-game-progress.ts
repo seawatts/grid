@@ -2,30 +2,45 @@ import { useEffect, useState } from 'react';
 import { DEFAULT_PROGRESS, withProgressDefaults } from '../constants/progress';
 import { UPGRADES } from '../constants/upgrades';
 import type { PlayerProgress, UpgradeType } from '../game-types';
+import { updateEnergy } from '../utils/energy';
 
 const STORAGE_KEY = 'grid_defense_progress';
 
 export function useGameProgress() {
-  const [progress, setProgress] = useState<PlayerProgress>(
-    withProgressDefaults(DEFAULT_PROGRESS),
-  );
+  const [progress, setProgress] = useState<PlayerProgress>(() => {
+    // Always start with default - load from localStorage in useEffect (client-side only)
+    return withProgressDefaults(DEFAULT_PROGRESS);
+  });
 
-  // Load progress from localStorage on mount
+  // Load progress from localStorage on mount and update energy (client-side only)
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
         const normalized = withProgressDefaults(parsed);
-        setProgress(normalized);
+        const updated = updateEnergy(normalized);
+        setProgress(updated);
       } catch (e) {
         console.error('Failed to load progress', e);
       }
     }
   }, []);
 
-  // Save progress to localStorage whenever it changes
+  // Update energy periodically (every minute)
   useEffect(() => {
+    const interval = setInterval(() => {
+      setProgress((prev) => updateEnergy(prev));
+    }, 60000); // Every minute
+
+    return () => clearInterval(interval);
+  }, []);
+
+  // Save progress to localStorage whenever it changes (client-side only)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
     localStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
   }, [progress]);
 
@@ -74,10 +89,39 @@ export function useGameProgress() {
     });
   };
 
+  const addEnergy = (amount: number) => {
+    setProgress((prev) => {
+      const updated = updateEnergy(prev);
+      const maxEnergy = updated.maxEnergy;
+      return {
+        ...updated,
+        energy: Math.min(updated.energy + amount, maxEnergy),
+      };
+    });
+  };
+
+  const spendEnergy = (amount: number): boolean => {
+    let success = false;
+    setProgress((prev) => {
+      const updated = updateEnergy(prev);
+      if (updated.energy >= amount) {
+        success = true;
+        return {
+          ...updated,
+          energy: updated.energy - amount,
+        };
+      }
+      return updated;
+    });
+    return success;
+  };
+
   return {
+    addEnergy,
     earnTechPoints,
     progress,
     purchaseUpgrade,
     recordMapRating,
+    spendEnergy,
   };
 }

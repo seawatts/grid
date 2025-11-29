@@ -56,6 +56,98 @@
   --animation-duration-normal: 0.3s;
   --animation-duration-slow: 0.5s;
   --animation-duration-very-slow: 0.8s;
+
+  /* Tower Defense Colors */
+  /* Trap colors (red) */
+  --trap-color: rgb(239, 68, 68);
+  --trap-glow-color: rgba(239, 68, 68, 0.6);
+  --trap-bg-light: rgba(239, 68, 68, 0.3);
+  --trap-bg-dark: rgba(239, 68, 68, 0.4);
+
+  /* Powerup/Buff colors (yellow) */
+  --powerup-color: rgb(250, 204, 21);
+  --powerup-glow-color: rgba(250, 204, 21, 0.6);
+  --powerup-bg-light: rgba(250, 204, 21, 0.3);
+  --powerup-bg-dark: rgba(250, 204, 21, 0.4);
+
+  /* Tower colors */
+  --tower-basic-color: rgb(6, 182, 212);
+  --tower-basic-bg: rgba(6, 182, 212, 0.3);
+  --tower-basic-bg-20: rgba(6, 182, 212, 0.2);
+  --tower-basic-border: rgb(6, 182, 212);
+  --tower-basic-border-50: rgba(6, 182, 212, 0.5);
+  --tower-basic-shadow: rgba(6, 182, 212, 0.5);
+  --tower-basic-glow: rgba(6, 182, 212, 0.6);
+
+  --tower-bomb-color: rgb(236, 72, 153);
+  --tower-bomb-bg: rgba(236, 72, 153, 0.3);
+  --tower-bomb-bg-20: rgba(236, 72, 153, 0.2);
+  --tower-bomb-border: rgb(236, 72, 153);
+  --tower-bomb-border-50: rgba(236, 72, 153, 0.5);
+  --tower-bomb-shadow: rgba(236, 72, 153, 0.5);
+  --tower-bomb-glow: rgba(236, 72, 153, 0.6);
+
+  --tower-slow-color: rgb(168, 85, 247);
+  --tower-slow-bg: rgba(168, 85, 247, 0.3);
+  --tower-slow-bg-20: rgba(168, 85, 247, 0.2);
+  --tower-slow-border: rgb(168, 85, 247);
+  --tower-slow-border-50: rgba(168, 85, 247, 0.5);
+  --tower-slow-shadow: rgba(168, 85, 247, 0.5);
+  --tower-slow-glow: rgba(168, 85, 247, 0.6);
+
+  --tower-sniper-color: rgb(34, 197, 94);
+  --tower-sniper-bg: rgba(34, 197, 94, 0.3);
+  --tower-sniper-bg-20: rgba(34, 197, 94, 0.2);
+  --tower-sniper-border: rgb(34, 197, 94);
+  --tower-sniper-border-50: rgba(34, 197, 94, 0.5);
+  --tower-sniper-shadow: rgba(34, 197, 94, 0.5);
+  --tower-sniper-glow: rgba(34, 197, 94, 0.6);
+
+  /* Enemy colors */
+  --enemy-basic-color: rgb(251, 146, 60);
+  --enemy-boss-color: rgb(168, 85, 247);
+  --enemy-fast-color: rgb(34, 197, 94);
+  --enemy-tank-color: rgb(239, 68, 68);
+
+  /* Rarity colors */
+  --rarity-common-color: rgb(156, 163, 175);
+  --rarity-common-glow: rgba(156, 163, 175, 0.4);
+  --rarity-rare-color: rgb(6, 182, 212);
+  --rarity-rare-glow: rgba(6, 182, 212, 0.6);
+  --rarity-epic-color: rgb(168, 85, 247);
+  --rarity-epic-glow: rgba(168, 85, 247, 0.6);
+  --rarity-legendary-color: rgb(250, 204, 21);
+  --rarity-legendary-glow: rgba(250, 204, 21, 0.8);
+
+  /* Status colors */
+  --status-success-color: rgb(34, 197, 94);
+  --status-success-glow: rgba(34, 197, 94, 0.5);
+  --status-error-color: rgb(239, 68, 68);
+  --status-error-glow: rgba(239, 68, 68, 0.5);
+  --status-warning-color: rgb(250, 204, 21);
+  --status-warning-glow: rgba(250, 204, 21, 0.5);
+
+  /* UI Theme colors (cyan primary) */
+  --ui-primary-cyan: rgb(6, 182, 212);
+  --ui-primary-cyan-light: rgb(34, 211, 238);
+  --ui-primary-cyan-bg-10: rgba(6, 182, 212, 0.1);
+  --ui-primary-cyan-bg-15: rgba(6, 182, 212, 0.15);
+  --ui-primary-cyan-bg-20: rgba(6, 182, 212, 0.2);
+  --ui-primary-cyan-bg-30: rgba(6, 182, 212, 0.3);
+  --ui-primary-cyan-bg-35: rgba(6, 182, 212, 0.35);
+  --ui-primary-cyan-shadow-20: rgba(6, 182, 212, 0.2);
+  --ui-primary-cyan-shadow-30: rgba(6, 182, 212, 0.3);
+  --ui-primary-cyan-shadow-50: rgba(6, 182, 212, 0.5);
+  --ui-primary-cyan-glow: rgba(34, 211, 238, 0.35);
+
+  /* Neutral colors */
+  --neutral-gray-400: rgb(156, 163, 175);
+  --neutral-gray-400-bg-20: rgba(156, 163, 175, 0.2);
+  --neutral-gray-400-shadow-30: rgba(156, 163, 175, 0.3);
+  --neutral-gray-500: rgb(107, 114, 128);
+  --neutral-gray-500-shadow-50: rgba(107, 114, 128, 0.5);
+  --neutral-gray-100: rgb(100, 100, 100);
+  --neutral-gray-150: rgb(150, 150, 150);
 }
 
 .dark {
@@ -118,6 +210,30 @@
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
+  --color-trap: var(--trap-color);
+  --color-trap-glow: var(--trap-glow-color);
+  --color-trap-bg-light: var(--trap-bg-light);
+  --color-trap-bg-dark: var(--trap-bg-dark);
+  --color-powerup: var(--powerup-color);
+  --color-powerup-glow: var(--powerup-glow-color);
+  --color-powerup-bg-light: var(--powerup-bg-light);
+  --color-powerup-bg-dark: var(--powerup-bg-dark);
+  --color-tower-basic: var(--tower-basic-color);
+  --color-tower-bomb: var(--tower-bomb-color);
+  --color-tower-slow: var(--tower-slow-color);
+  --color-tower-sniper: var(--tower-sniper-color);
+  --color-enemy-basic: var(--enemy-basic-color);
+  --color-enemy-boss: var(--enemy-boss-color);
+  --color-enemy-fast: var(--enemy-fast-color);
+  --color-enemy-tank: var(--enemy-tank-color);
+  --color-rarity-common: var(--rarity-common-color);
+  --color-rarity-rare: var(--rarity-rare-color);
+  --color-rarity-epic: var(--rarity-epic-color);
+  --color-rarity-legendary: var(--rarity-legendary-color);
+  --color-status-success: var(--status-success-color);
+  --color-status-error: var(--status-error-color);
+  --color-status-warning: var(--status-warning-color);
+  --color-ui-primary-cyan: var(--ui-primary-cyan);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);

@@ -40,12 +40,12 @@ export default function TowerSelectionPopup({
               style={{
                 borderColor: canAfford
                   ? type === 'basic'
-                    ? 'rgb(6, 182, 212)'
+                    ? 'var(--tower-basic-border)'
                     : type === 'slow'
-                      ? 'rgb(168, 85, 247)'
+                      ? 'var(--tower-slow-border)'
                       : type === 'bomb'
-                        ? 'rgb(236, 72, 153)'
-                        : 'rgb(34, 197, 94)'
+                        ? 'var(--tower-bomb-border)'
+                        : 'var(--tower-sniper-border)'
                   : undefined,
               }}
               type="button"
@@ -55,12 +55,12 @@ export default function TowerSelectionPopup({
                 style={{
                   color:
                     type === 'basic'
-                      ? 'rgb(6, 182, 212)'
+                      ? 'var(--tower-basic-color)'
                       : type === 'slow'
-                        ? 'rgb(168, 85, 247)'
+                        ? 'var(--tower-slow-color)'
                         : type === 'bomb'
-                          ? 'rgb(236, 72, 153)'
-                          : 'rgb(34, 197, 94)',
+                          ? 'var(--tower-bomb-color)'
+                          : 'var(--tower-sniper-color)',
                 }}
               >
                 {type}

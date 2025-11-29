@@ -1,6 +1,14 @@
 import type { RunUpgrade, UpgradeConfig } from '../game-types';
 
 export const UPGRADES: Record<string, UpgradeConfig> = {
+  energyRecoveryRate: {
+    costs: [5, 10, 15, 20],
+    description: 'Increases energy recovery rate per hour.',
+    effects: [1, 1.5, 2, 2.5, 3], // Base, Lvl 1, Lvl 2, Lvl 3, Lvl 4 (energy per hour)
+    id: 'energyRecoveryRate',
+    maxLevel: 4,
+    name: 'Energy Recovery Rate',
+  },
   gridBugDamage: {
     costs: [2, 4, 8],
     description: 'Increases the damage dealt by Grid Bugs.',
@@ -32,6 +40,14 @@ export const UPGRADES: Record<string, UpgradeConfig> = {
     id: 'landmineFrequency',
     maxLevel: 3,
     name: 'Landmine Frequency',
+  },
+  maxEnergy: {
+    costs: [10, 20, 30],
+    description: 'Increases maximum energy capacity.',
+    effects: [5, 7, 10, 15], // Base, Lvl 1, Lvl 2, Lvl 3 (max energy)
+    id: 'maxEnergy',
+    maxLevel: 3,
+    name: 'Max Energy',
   },
   powerNodeFrequency: {
     costs: [2, 4, 8],

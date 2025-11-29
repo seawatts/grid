@@ -12,28 +12,28 @@ export const TOWER_STATS = {
 
 export const ENEMY_STATS = {
   basic: {
-    color: 'rgb(251, 146, 60)', // orange
+    color: 'var(--enemy-basic-color)',
     health: 100,
     reward: 10,
     size: 0.5,
     speed: 0.1,
   },
   boss: {
-    color: 'rgb(168, 85, 247)', // purple
+    color: 'var(--enemy-boss-color)',
     health: 800,
     reward: 100,
     size: 0.8,
     speed: 0.04,
   },
   fast: {
-    color: 'rgb(34, 197, 94)', // green
+    color: 'var(--enemy-fast-color)',
     health: 50,
     reward: 15,
     size: 0.4,
     speed: 0.18,
   },
   tank: {
-    color: 'rgb(239, 68, 68)', // red
+    color: 'var(--enemy-tank-color)',
     health: 300,
     reward: 30,
     size: 0.65,

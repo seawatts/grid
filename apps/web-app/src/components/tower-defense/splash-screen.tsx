@@ -3,9 +3,11 @@
 import { Button } from '@seawatts/ui/button';
 import { useEffect, useState } from 'react';
 import AnimatedLine from '~/components/animated-line';
+import EnergyPurchase from '~/components/tower-defense/energy-purchase';
 import MapSelector from '~/components/tower-defense/map-selector';
 import PowerUpSelector from '~/components/tower-defense/power-up-selector';
 import UpgradesMenu from '~/components/tower-defense/upgrades-menu';
+import { ENERGY_COST_PER_MAP } from '~/lib/tower-defense/constants/balance';
 import { selectRandomPowerUps } from '~/lib/tower-defense/constants/wave-powerups';
 import type {
   PlayerProgress,
@@ -13,23 +15,28 @@ import type {
   WavePowerUp,
 } from '~/lib/tower-defense/game-types';
 import type { SavedGameInfo } from '~/lib/tower-defense/hooks/use-game-state-persistence';
+import { updateEnergy } from '~/lib/tower-defense/utils/energy';
 
 interface SplashScreenProps {
+  addEnergy: (amount: number) => void;
   onStart: (mapId: string, initialPowerUp?: WavePowerUp) => void;
   progress: PlayerProgress;
   onPurchaseUpgrade: (upgradeId: UpgradeType) => void;
   savedGameInfo: SavedGameInfo | null;
   onResume: () => void;
   onNewGame: () => void;
+  spendEnergy: (amount: number) => boolean;
 }
 
 export default function SplashScreen({
+  addEnergy: _addEnergy,
   onStart,
   progress,
   onPurchaseUpgrade,
   savedGameInfo,
   onResume,
   onNewGame,
+  spendEnergy: _spendEnergy,
 }: SplashScreenProps) {
   const [animate, setAnimate] = useState(false);
   const [selectedMapId, setSelectedMapId] = useState('open');
@@ -43,6 +50,11 @@ export default function SplashScreen({
   }, []);
 
   const handleMapConfirm = () => {
+    const updatedProgress = updateEnergy(progress);
+    if (updatedProgress.energy < ENERGY_COST_PER_MAP) {
+      // Not enough energy - could show error message
+      return;
+    }
     const randomPowerUps = selectRandomPowerUps(3);
     setAvailablePowerUps(randomPowerUps);
     setShowMapSelector(false);
@@ -170,6 +182,7 @@ export default function SplashScreen({
               <MapSelector
                 mapRatings={progress.mapRatings}
                 onSelectMap={setSelectedMapId}
+                progress={progress}
                 selectedMapId={selectedMapId}
               />
               <div className="flex gap-4 justify-center mt-6">
@@ -180,7 +193,8 @@ export default function SplashScreen({
                   BACK
                 </Button>
                 <Button
-                  className="relative group bg-cyan-500/20 hover:bg-cyan-500/40 text-cyan-400 border-2 border-cyan-400 px-8 py-3 text-sm font-bold transition-all hover:scale-105"
+                  className="relative group bg-cyan-500/20 hover:bg-cyan-500/40 text-cyan-400 border-2 border-cyan-400 px-8 py-3 text-sm font-bold transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={updateEnergy(progress).energy < ENERGY_COST_PER_MAP}
                   onClick={handleMapConfirm}
                   style={{
                     boxShadow: '0 0 20px rgba(6, 182, 212, 0.5)',
@@ -199,6 +213,14 @@ export default function SplashScreen({
                 <p className="text-pink-400 text-sm sm:text-lg font-mono opacity-80">
                   BUILD THE MAZE • CONTROL THE PATH • DOMINATE THE GRID
                 </p>
+              </div>
+
+              {/* Energy Display */}
+              <div className="mb-4 sm:mb-6 max-w-md w-full mx-auto px-2 sm:px-0">
+                <EnergyPurchase
+                  canPurchase={true} // For now, always allow - can be enhanced with gold check later
+                  progress={progress}
+                />
               </div>
 
               <div className="flex flex-col items-center gap-4">

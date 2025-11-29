@@ -136,13 +136,16 @@ export class ItemSystem implements GameSystem {
         const pos = emptyCells.splice(randomIndex, 1)[0];
         if (!pos) continue;
 
-        const boost = config.getBoost(progress);
+        // Select rarity and apply multiplier to boost
+        const rarity = config.getRarity();
+        const boost = config.getBoost(progress, rarity);
         newPlaceables.push({
           boost,
           category: 'powerup',
           id: placeableIdCounter++,
           isTowerBound: false,
           positions: [pos],
+          rarity,
           remainingWaves: lifetime,
           type: powerupType,
         });

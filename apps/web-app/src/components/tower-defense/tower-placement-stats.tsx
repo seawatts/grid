@@ -20,12 +20,12 @@ export default function TowerPlacementStats({
 
   const color =
     type === 'basic'
-      ? 'rgb(6, 182, 212)'
+      ? 'var(--tower-basic-color)'
       : type === 'slow'
-        ? 'rgb(168, 85, 247)'
+        ? 'var(--tower-slow-color)'
         : type === 'bomb'
-          ? 'rgb(236, 72, 153)'
-          : 'rgb(34, 197, 94)';
+          ? 'var(--tower-bomb-color)'
+          : 'var(--tower-sniper-color)';
 
   return (
     <div className="w-full bg-black/80 border-t border-cyan-500/30 p-4 flex items-center justify-between gap-4 backdrop-blur-md">
@@ -78,7 +78,7 @@ export default function TowerPlacementStats({
         <Button
           className="bg-cyan-500 hover:bg-cyan-400 text-black font-bold h-12 px-6 rounded-full flex items-center gap-2 transition-all active:scale-95"
           onClick={onPlace}
-          style={{ boxShadow: '0 0 20px rgba(6, 182, 212, 0.4)' }}
+          style={{ boxShadow: '0 0 20px var(--ui-primary-cyan-shadow-30)' }}
         >
           <Check className="w-5 h-5" />
           PLACE

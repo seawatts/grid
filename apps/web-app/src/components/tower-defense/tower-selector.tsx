@@ -33,38 +33,38 @@ export default function TowerSelector({
             backgroundColor:
               selectedTowerType === type
                 ? type === 'basic'
-                  ? 'rgba(6, 182, 212, 0.2)'
+                  ? 'var(--tower-basic-bg-20)'
                   : type === 'slow'
-                    ? 'rgba(168, 85, 247, 0.2)'
+                    ? 'var(--tower-slow-bg-20)'
                     : type === 'bomb'
-                      ? 'rgba(236, 72, 153, 0.2)'
-                      : 'rgba(34, 197, 94, 0.2)'
+                      ? 'var(--tower-bomb-bg-20)'
+                      : 'var(--tower-sniper-bg-20)'
                 : undefined,
             borderColor:
               selectedTowerType === type
                 ? type === 'basic'
-                  ? 'rgb(6, 182, 212)'
+                  ? 'var(--tower-basic-border)'
                   : type === 'slow'
-                    ? 'rgb(168, 85, 247)'
+                    ? 'var(--tower-slow-border)'
                     : type === 'bomb'
-                      ? 'rgb(236, 72, 153)'
-                      : 'rgb(34, 197, 94)'
+                      ? 'var(--tower-bomb-border)'
+                      : 'var(--tower-sniper-border)'
                 : type === 'basic'
-                  ? 'rgba(6, 182, 212, 0.5)'
+                  ? 'var(--tower-basic-border-50)'
                   : type === 'slow'
-                    ? 'rgba(168, 85, 247, 0.5)'
+                    ? 'var(--tower-slow-border-50)'
                     : type === 'bomb'
-                      ? 'rgba(236, 72, 153, 0.5)'
-                      : 'rgba(34, 197, 94, 0.5)',
+                      ? 'var(--tower-bomb-border-50)'
+                      : 'var(--tower-sniper-border-50)',
             boxShadow:
               selectedTowerType === type
                 ? type === 'basic'
-                  ? '0 0 20px rgba(6, 182, 212, 0.5)'
+                  ? '0 0 20px var(--tower-basic-shadow)'
                   : type === 'slow'
-                    ? '0 0 20px rgba(168, 85, 247, 0.5)'
+                    ? '0 0 20px var(--tower-slow-shadow)'
                     : type === 'bomb'
-                      ? '0 0 20px rgba(236, 72, 153, 0.5)'
-                      : '0 0 20px rgba(34, 197, 94, 0.5)'
+                      ? '0 0 20px var(--tower-bomb-shadow)'
+                      : '0 0 20px var(--tower-sniper-shadow)'
                 : 'none',
             minHeight: '50px',
           }}
@@ -75,12 +75,12 @@ export default function TowerSelector({
             style={{
               color:
                 type === 'basic'
-                  ? 'rgb(6, 182, 212)'
+                  ? 'var(--tower-basic-color)'
                   : type === 'slow'
-                    ? 'rgb(168, 85, 247)'
+                    ? 'var(--tower-slow-color)'
                     : type === 'bomb'
-                      ? 'rgb(236, 72, 153)'
-                      : 'rgb(34, 197, 94)',
+                      ? 'var(--tower-bomb-color)'
+                      : 'var(--tower-sniper-color)',
             }}
           >
             {type}

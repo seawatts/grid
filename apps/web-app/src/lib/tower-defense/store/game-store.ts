@@ -162,6 +162,7 @@ interface GameStore extends GameState {
   // Wave power-up actions
   addWavePowerUp: (powerUp: WavePowerUp) => void;
   removeExpiredWavePowerUps: () => void;
+  removeWavePowerUp: (powerUpId: string) => void;
   setPendingPowerUpSelection: (pending: boolean) => void;
 
   // Persistence actions
@@ -451,8 +452,16 @@ export const useGameStore = create<GameStore>((set, get) => ({
   },
 
   loadSavedState: (savedState: SavedGameState, _mapId: string) => {
+    // Ensure activeWavePowerUps have rarity (default to 'common' for backward compatibility)
+    const activeWavePowerUps = (savedState.activeWavePowerUps ?? []).map(
+      (powerup) => ({
+        ...powerup,
+        rarity: powerup.rarity ?? 'common',
+      }),
+    );
+
     set({
-      activeWavePowerUps: savedState.activeWavePowerUps ?? [],
+      activeWavePowerUps,
       autoAdvance: savedState.autoAdvance,
       combo: 0,
       damageNumberIdCounter: savedState.damageNumberIdCounter,
@@ -541,6 +550,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
         towers: nextTowers,
       };
     }),
+
+  removeWavePowerUp: (powerUpId) =>
+    set((state) => ({
+      activeWavePowerUps: state.activeWavePowerUps.filter(
+        (powerUp) => powerUp.id !== powerUpId,
+      ),
+    })),
 
   resetGame: () => set(createInitialState()),
   setAutoAdvance: (auto) => set({ autoAdvance: auto }),

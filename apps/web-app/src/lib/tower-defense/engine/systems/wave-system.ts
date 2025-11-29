@@ -11,6 +11,13 @@ import type {
 } from '../../store/types';
 
 export class WaveSystem implements GameSystem {
+  /**
+   * Check if a wave number is a boss wave (every 10th wave)
+   */
+  private isBossWave(wave: number): boolean {
+    return wave > 0 && wave % 10 === 0;
+  }
+
   update(
     state: GameState,
     _deltaTime: number,
@@ -65,23 +72,69 @@ export class WaveSystem implements GameSystem {
     }
 
     const newEnemies: Enemy[] = [];
+    const isBossWave = this.isBossWave(newWave);
 
+    // For boss waves, calculate boss count and create enemy type plan
+    let enemyTypePlan: EnemyType[] = [];
+
+    if (isBossWave) {
+      // Calculate boss count: scales with wave number (1 at wave 10, 2 at wave 20, etc.)
+      const bossCount = Math.floor(newWave / 10);
+
+      // Create a plan with ~70-80% bosses and ~20-30% regular enemies
+      // Distribute bosses evenly throughout the wave
+      enemyTypePlan = new Array(enemyCount).fill('basic' as EnemyType);
+
+      // Place bosses at evenly spaced intervals
+      if (bossCount > 0) {
+        const spacing = Math.floor(enemyCount / (bossCount + 1));
+        for (let b = 0; b < bossCount; b++) {
+          const bossIndex = Math.floor((b + 1) * spacing);
+          if (bossIndex < enemyCount) {
+            enemyTypePlan[bossIndex] = 'boss';
+          }
+        }
+      }
+
+      // Fill remaining slots with variety of regular enemies
+      for (let i = 0; i < enemyCount; i++) {
+        if (enemyTypePlan[i] === 'boss') continue;
+
+        // Tank enemies appear after wave 2
+        if (newWave >= 2 && i % 4 === 0) {
+          enemyTypePlan[i] = 'tank';
+        }
+        // Fast enemies appear after wave 1
+        else if (newWave >= 1 && i % 3 === 0) {
+          enemyTypePlan[i] = 'fast';
+        }
+        // Otherwise keep as basic
+      }
+    } else {
+      // Regular wave logic: build plan as we go
+      for (let i = 0; i < enemyCount; i++) {
+        let enemyType: EnemyType = 'basic';
+
+        // Boss every 5th enemy after wave 3
+        if (newWave >= 3 && (i + 1) % 5 === 0) {
+          enemyType = 'boss';
+        }
+        // Tank enemies appear after wave 2
+        else if (newWave >= 2 && i % 4 === 0) {
+          enemyType = 'tank';
+        }
+        // Fast enemies appear after wave 1
+        else if (newWave >= 1 && i % 3 === 0) {
+          enemyType = 'fast';
+        }
+
+        enemyTypePlan.push(enemyType);
+      }
+    }
+
+    // Generate enemies based on the plan
     for (let i = 0; i < enemyCount; i++) {
-      let enemyType: EnemyType = 'basic';
-
-      // Boss every 5th enemy after wave 3
-      if (newWave >= 3 && (i + 1) % 5 === 0) {
-        enemyType = 'boss';
-      }
-      // Tank enemies appear after wave 2
-      else if (newWave >= 2 && i % 4 === 0) {
-        enemyType = 'tank';
-      }
-      // Fast enemies appear after wave 1
-      else if (newWave >= 1 && i % 3 === 0) {
-        enemyType = 'fast';
-      }
-
+      const enemyType = enemyTypePlan[i] || 'basic';
       const enemyStats = ENEMY_STATS[enemyType];
       const health = enemyStats.health;
       const speed = enemyStats.speed;
