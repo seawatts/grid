@@ -39,10 +39,12 @@ describe('Projectile Tracking Integration Tests', () => {
       mapRatings: {},
       techPoints: 0,
       upgrades: {
+        energyRecoveryRate: 0,
         gridBugDamage: 0,
         gridBugFrequency: 0,
         landmineDamage: 0,
         landmineFrequency: 0,
+        maxEnergy: 0,
         powerNodeFrequency: 0,
         powerNodePersistence: 0,
         powerNodePotency: 0,

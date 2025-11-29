@@ -53,10 +53,12 @@ describe('Item System Tests', () => {
           mapRatings: {},
           techPoints: 0,
           upgrades: {
+            energyRecoveryRate: 0,
             gridBugDamage: 0,
             gridBugFrequency: 0,
             landmineDamage: 0,
             landmineFrequency: 0,
+            maxEnergy: 0,
             powerNodeFrequency: 0, // No upgrade
             powerNodePersistence: 0,
             powerNodePotency: 0,
@@ -72,10 +74,12 @@ describe('Item System Tests', () => {
           mapRatings: {},
           techPoints: 0,
           upgrades: {
+            energyRecoveryRate: 0,
             gridBugDamage: 0,
             gridBugFrequency: 0,
             landmineDamage: 0,
             landmineFrequency: 0,
+            maxEnergy: 0,
             powerNodeFrequency: 3, // Max upgrade
             powerNodePersistence: 0,
             powerNodePotency: 0,
@@ -105,10 +109,12 @@ describe('Item System Tests', () => {
           mapRatings: {},
           techPoints: 0,
           upgrades: {
+            energyRecoveryRate: 0,
             gridBugDamage: 0,
             gridBugFrequency: 0,
             landmineDamage: 0,
             landmineFrequency: 0,
+            maxEnergy: 0,
             powerNodeFrequency: 0,
             powerNodePersistence: 0,
             powerNodePotency: 0, // No upgrade
@@ -124,10 +130,12 @@ describe('Item System Tests', () => {
           mapRatings: {},
           techPoints: 0,
           upgrades: {
+            energyRecoveryRate: 0,
             gridBugDamage: 0,
             gridBugFrequency: 0,
             landmineDamage: 0,
             landmineFrequency: 0,
+            maxEnergy: 0,
             powerNodeFrequency: 0,
             powerNodePersistence: 0,
             powerNodePotency: 3, // Max upgrade
@@ -293,10 +301,12 @@ describe('Item System Tests', () => {
           mapRatings: {},
           techPoints: 0,
           upgrades: {
+            energyRecoveryRate: 0,
             gridBugDamage: 0,
             gridBugFrequency: 0,
             landmineDamage: 0,
             landmineFrequency: 0, // No upgrade
+            maxEnergy: 0,
             powerNodeFrequency: 0,
             powerNodePersistence: 0,
             powerNodePotency: 0,
@@ -312,10 +322,12 @@ describe('Item System Tests', () => {
           mapRatings: {},
           techPoints: 0,
           upgrades: {
+            energyRecoveryRate: 0,
             gridBugDamage: 0,
             gridBugFrequency: 0,
             landmineDamage: 0,
             landmineFrequency: 3, // Max upgrade
+            maxEnergy: 0,
             powerNodeFrequency: 0,
             powerNodePersistence: 0,
             powerNodePotency: 0,
@@ -345,10 +357,12 @@ describe('Item System Tests', () => {
           mapRatings: {},
           techPoints: 0,
           upgrades: {
+            energyRecoveryRate: 0,
             gridBugDamage: 0,
             gridBugFrequency: 0,
             landmineDamage: 0, // No upgrade
             landmineFrequency: 0,
+            maxEnergy: 0,
             powerNodeFrequency: 0,
             powerNodePersistence: 0,
             powerNodePotency: 0,
@@ -364,10 +378,12 @@ describe('Item System Tests', () => {
           mapRatings: {},
           techPoints: 0,
           upgrades: {
+            energyRecoveryRate: 0,
             gridBugDamage: 0,
             gridBugFrequency: 0,
             landmineDamage: 3, // Max upgrade
             landmineFrequency: 0,
+            maxEnergy: 0,
             powerNodeFrequency: 0,
             powerNodePersistence: 0,
             powerNodePotency: 0,

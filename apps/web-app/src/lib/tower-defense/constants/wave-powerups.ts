@@ -190,7 +190,10 @@ export function selectRandomPowerUps(count = 3): WavePowerUp[] {
   };
 
   for (const powerup of WAVE_POWERUP_POOL) {
-    byRarity[powerup.rarity].push(powerup);
+    const rarity = powerup.rarity ?? 'common';
+    if (rarity in byRarity) {
+      byRarity[rarity].push(powerup);
+    }
   }
 
   const selected: WavePowerUp[] = [];
@@ -209,29 +212,34 @@ export function selectRandomPowerUps(count = 3): WavePowerUp[] {
 
     if (poolForRarity.length === 0) {
       // If no powerups of this rarity are available, try another
-      const availableRarities = Object.keys(byRarity).filter((r) =>
-        byRarity[r].some((p) => !usedIds.has(p.id)),
+      const availableRarities = Object.keys(byRarity).filter(
+        (r): r is keyof typeof byRarity =>
+          r in byRarity && byRarity[r].some((p) => !usedIds.has(p.id)),
       );
       if (availableRarities.length === 0) break;
 
       const fallbackRarity =
         availableRarities[Math.floor(Math.random() * availableRarities.length)];
-      const fallbackPool = byRarity[fallbackRarity].filter(
+      const fallbackPool = byRarity[fallbackRarity]?.filter(
         (p) => !usedIds.has(p.id),
       );
-      if (fallbackPool.length > 0) {
+      if (fallbackPool && fallbackPool.length > 0) {
         const selectedPowerup =
           fallbackPool[Math.floor(Math.random() * fallbackPool.length)];
-        selected.push(selectedPowerup);
-        usedIds.add(selectedPowerup.id);
+        if (selectedPowerup) {
+          selected.push(selectedPowerup);
+          usedIds.add(selectedPowerup.id);
+        }
       } else {
         break;
       }
     } else {
       const selectedPowerup =
         poolForRarity[Math.floor(Math.random() * poolForRarity.length)];
-      selected.push(selectedPowerup);
-      usedIds.add(selectedPowerup.id);
+      if (selectedPowerup) {
+        selected.push(selectedPowerup);
+        usedIds.add(selectedPowerup.id);
+      }
     }
   }
 

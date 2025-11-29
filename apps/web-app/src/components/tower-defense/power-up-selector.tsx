@@ -99,13 +99,17 @@ export default function PowerUpSelector({
         className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-300"
         onClick={() => {
           // Clicking the backdrop selects the first power-up and proceeds
-          if (powerUps.length > 0) {
-            onSelect(powerUps[0]);
+          const firstPowerUp = powerUps[0];
+          if (firstPowerUp) {
+            onSelect(firstPowerUp);
           }
         }}
         onKeyDown={(e) => {
-          if (e.key === 'Escape' && powerUps.length > 0) {
-            onSelect(powerUps[0]);
+          if (e.key === 'Escape') {
+            const firstPowerUp = powerUps[0];
+            if (firstPowerUp) {
+              onSelect(firstPowerUp);
+            }
           }
         }}
         role="dialog"
