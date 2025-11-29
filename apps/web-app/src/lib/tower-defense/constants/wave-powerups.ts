@@ -213,7 +213,8 @@ export function selectRandomPowerUps(count = 3): WavePowerUp[] {
       // If no powerups of this rarity are available, try another
       const availableRarities = Object.keys(byRarity).filter(
         (r): r is keyof typeof byRarity =>
-          r in byRarity && byRarity[r]?.some((p) => !usedIds.has(p.id)),
+          r in byRarity &&
+          (byRarity[r]?.some((p) => !usedIds.has(p.id)) ?? false),
       );
       if (availableRarities.length === 0) break;
 
