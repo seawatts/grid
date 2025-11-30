@@ -9,7 +9,7 @@ export const WAVE_POWERUP_POOL: WavePowerUp[] = [
     effect: { type: 'damageMult', value: 0.15 },
     icon: 'damage',
     id: 'permanent-damage-15',
-    name: 'Overcharged Weapons',
+    name: 'Overclock',
     rarity: 'common',
     stacking: 'additive',
   },
@@ -19,7 +19,7 @@ export const WAVE_POWERUP_POOL: WavePowerUp[] = [
     effect: { type: 'damageMult', value: 0.25 },
     icon: 'damage',
     id: 'permanent-damage-25',
-    name: 'Supercharged Systems',
+    name: 'Turbo',
     rarity: 'rare',
     stacking: 'additive',
   },
@@ -31,7 +31,7 @@ export const WAVE_POWERUP_POOL: WavePowerUp[] = [
     effect: { type: 'damageMult', value: 0.3 },
     icon: 'damage',
     id: 'temp-damage-30-3',
-    name: 'Tactical Overload',
+    name: 'Overload',
     rarity: 'epic',
     stacking: 'additive',
   },
@@ -41,7 +41,7 @@ export const WAVE_POWERUP_POOL: WavePowerUp[] = [
     effect: { type: 'damageMult', value: 0.5 },
     icon: 'damage',
     id: 'temp-damage-50-1',
-    name: 'Burst Power',
+    name: 'Burst',
     rarity: 'legendary',
     stacking: 'additive',
   },
@@ -53,7 +53,7 @@ export const WAVE_POWERUP_POOL: WavePowerUp[] = [
     effect: { type: 'fireRateMult', value: 0.2 },
     icon: 'speed',
     id: 'permanent-firerate-20',
-    name: 'Rapid Fire Protocol',
+    name: 'Turbo Mode',
     rarity: 'rare',
     stacking: 'multiplicative',
   },
@@ -63,7 +63,7 @@ export const WAVE_POWERUP_POOL: WavePowerUp[] = [
     effect: { type: 'fireRateMult', value: 0.3 },
     icon: 'speed',
     id: 'temp-firerate-30-2',
-    name: 'Speed Boost',
+    name: 'Cache',
     rarity: 'epic',
     stacking: 'multiplicative',
   },
@@ -75,7 +75,7 @@ export const WAVE_POWERUP_POOL: WavePowerUp[] = [
     effect: { type: 'addMoney', value: 50 },
     icon: 'money',
     id: 'money-50',
-    name: 'Emergency Funds',
+    name: 'Buffer',
     rarity: 'common',
     stacking: 'additive',
   },
@@ -85,7 +85,7 @@ export const WAVE_POWERUP_POOL: WavePowerUp[] = [
     effect: { type: 'addMoney', value: 100 },
     icon: 'money',
     id: 'money-100',
-    name: 'Windfall',
+    name: 'Stack',
     rarity: 'rare',
     stacking: 'additive',
   },
@@ -95,7 +95,7 @@ export const WAVE_POWERUP_POOL: WavePowerUp[] = [
     effect: { type: 'addMoney', value: 150 },
     icon: 'money',
     id: 'money-150',
-    name: 'Major Funding',
+    name: 'Heap',
     rarity: 'epic',
     stacking: 'additive',
   },
@@ -107,7 +107,7 @@ export const WAVE_POWERUP_POOL: WavePowerUp[] = [
     effect: { type: 'addLives', value: 5 },
     icon: 'health',
     id: 'lives-5',
-    name: 'Reinforcement',
+    name: 'Core',
     rarity: 'common',
     stacking: 'additive',
   },
@@ -117,7 +117,7 @@ export const WAVE_POWERUP_POOL: WavePowerUp[] = [
     effect: { type: 'addLives', value: 10 },
     icon: 'health',
     id: 'lives-10',
-    name: 'Major Reinforcement',
+    name: 'Core+',
     rarity: 'rare',
     stacking: 'additive',
   },
@@ -129,7 +129,7 @@ export const WAVE_POWERUP_POOL: WavePowerUp[] = [
     effect: { type: 'rewardMult', value: 0.25 },
     icon: 'reward',
     id: 'permanent-reward-25',
-    name: 'Bounty Hunter',
+    name: 'Hash',
     rarity: 'rare',
     stacking: 'additive',
   },
@@ -139,7 +139,7 @@ export const WAVE_POWERUP_POOL: WavePowerUp[] = [
     effect: { type: 'rewardMult', value: 0.5 },
     icon: 'reward',
     id: 'temp-reward-50-2',
-    name: 'Double Bounty',
+    name: 'Dual Hash',
     rarity: 'epic',
     stacking: 'additive',
   },
@@ -151,7 +151,7 @@ export const WAVE_POWERUP_POOL: WavePowerUp[] = [
     effect: { type: 'towerRangeMult', value: 0.2 },
     icon: 'range',
     id: 'permanent-range-20',
-    name: 'Extended Range',
+    name: 'Vector',
     rarity: 'rare',
     stacking: 'additive',
   },
@@ -161,7 +161,7 @@ export const WAVE_POWERUP_POOL: WavePowerUp[] = [
     effect: { type: 'towerRangeMult', value: 0.5 },
     icon: 'range',
     id: 'temp-range-50-1',
-    name: 'Long Range Mode',
+    name: 'Long Mode',
     rarity: 'legendary',
     stacking: 'additive',
   },
@@ -171,7 +171,7 @@ export const WAVE_POWERUP_POOL: WavePowerUp[] = [
     effect: { type: 'towerRangeAdd', value: 1 },
     icon: 'range',
     id: 'permanent-range-add-1',
-    name: 'Range Extension',
+    name: 'Extend',
     rarity: 'epic',
     stacking: 'additive',
   },
@@ -179,8 +179,18 @@ export const WAVE_POWERUP_POOL: WavePowerUp[] = [
 
 /**
  * Randomly selects power-ups from the pool using weighted selection based on rarity
+ * @param count - Number of power-ups to select
+ * @param permanentOnly - If true, only select power-ups with permanent duration (for pre-game selection)
  */
-export function selectRandomPowerUps(count = 3): WavePowerUp[] {
+export function selectRandomPowerUps(
+  count = 3,
+  permanentOnly = false,
+): WavePowerUp[] {
+  // Filter pool if only permanent power-ups are requested
+  const pool = permanentOnly
+    ? WAVE_POWERUP_POOL.filter((p) => p.duration === 'permanent')
+    : WAVE_POWERUP_POOL;
+
   // Group powerups by rarity
   const byRarity: Record<string, WavePowerUp[]> = {
     common: [],
@@ -189,7 +199,7 @@ export function selectRandomPowerUps(count = 3): WavePowerUp[] {
     rare: [],
   };
 
-  for (const powerup of WAVE_POWERUP_POOL) {
+  for (const powerup of pool) {
     const rarity = powerup.rarity ?? 'common';
     if (rarity in byRarity && byRarity[rarity]) {
       byRarity[rarity]?.push(powerup);
@@ -200,10 +210,7 @@ export function selectRandomPowerUps(count = 3): WavePowerUp[] {
   const usedIds = new Set<string>();
 
   // Select powerups using weighted rarity selection
-  while (
-    selected.length < count &&
-    selected.length < WAVE_POWERUP_POOL.length
-  ) {
+  while (selected.length < count && selected.length < pool.length) {
     // Select a rarity using weighted selection
     const selectedRarity = selectRarityByWeight();
     const poolForRarity =

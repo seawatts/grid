@@ -9,6 +9,7 @@ export default function GameStats({
   maxWaves,
   score,
   combo,
+  onWaveClick,
 }: {
   money: number;
   lives: number;
@@ -16,6 +17,7 @@ export default function GameStats({
   maxWaves: number;
   score?: number;
   combo?: number;
+  onWaveClick?: () => void;
 }) {
   return (
     <div className="flex gap-2 flex-wrap">
@@ -33,18 +35,20 @@ export default function GameStats({
         <Heart className="w-4 h-4 text-pink-400" />
         <span className="text-white font-bold text-sm">{lives}</span>
       </div>
-      <div
-        className={`flex items-center gap-1 px-2 py-1.5 rounded border ${
+      <button
+        className={`flex items-center gap-1 px-2 py-1.5 rounded border transition-all ${
           wave > 0 && wave % 10 === 0
             ? 'border-yellow-400/50 bg-yellow-500/20 animate-pulse'
-            : 'border-purple-400/30 bg-purple-500/10'
-        }`}
+            : 'border-purple-400/30 bg-purple-500/10 hover:bg-purple-500/20'
+        } ${onWaveClick ? 'cursor-pointer active:scale-95' : ''}`}
+        onClick={onWaveClick}
         style={{
           boxShadow:
             wave > 0 && wave % 10 === 0
               ? '0 0 15px rgba(250, 204, 21, 0.4)'
               : '0 0 10px rgba(168, 85, 247, 0.2)',
         }}
+        type="button"
       >
         {wave > 0 && wave % 10 === 0 ? (
           <Crown className="w-4 h-4 text-yellow-400" />
@@ -57,7 +61,7 @@ export default function GameStats({
             <span className="ml-1 text-yellow-400 text-xs">BOSS</span>
           )}
         </span>
-      </div>
+      </button>
       {typeof score === 'number' && (
         <div
           className="flex items-center gap-1 px-2 py-1.5 rounded border border-yellow-400/30 bg-yellow-500/10"

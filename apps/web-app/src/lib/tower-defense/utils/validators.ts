@@ -1,6 +1,16 @@
 import { TOWER_STATS } from '../game-constants';
-import type { Position, Tower, TowerType } from '../game-types';
-import { findPathsForMultipleStartsAndGoals } from '../pathfinding';
+import type {
+  Landmine,
+  PlaceableItem,
+  Position,
+  PowerUp,
+  Tower,
+  TowerType,
+} from '../game-types';
+import {
+  combineBlockedPositions,
+  findPathsForMultipleStartsAndGoals,
+} from '../pathfinding';
 
 export interface PlacementValidationParams {
   x: number;
@@ -12,7 +22,11 @@ export interface PlacementValidationParams {
   obstacles: Position[];
   startPositions: Position[];
   goalPositions: Position[];
-  gridSize: number;
+  gridWidth: number;
+  gridHeight: number;
+  placeables?: PlaceableItem[];
+  powerups?: PowerUp[];
+  landmines?: Landmine[];
 }
 
 export interface PlacementValidationResult {
@@ -33,7 +47,11 @@ export function canPlaceTower(
     obstacles,
     startPositions,
     goalPositions,
-    gridSize,
+    gridWidth,
+    gridHeight,
+    placeables = [],
+    powerups = [],
+    landmines = [],
   } = params;
 
   const cost = TOWER_STATS[towerType].cost;
@@ -48,15 +66,47 @@ export function canPlaceTower(
     return { canPlace: false, reason: 'Invalid cell' };
   }
 
+  // Check if position is occupied by a trap (powerups allow tower placement)
+  const hasTrap = placeables.some(
+    (item) =>
+      item.category === 'trap' &&
+      item.positions.some((pos) => pos.x === x && pos.y === y),
+  );
+  if (hasTrap) {
+    return { canPlace: false, reason: 'Cell occupied by trap' };
+  }
+
+  // Check if position is occupied by a powerup
+  const hasPowerup = powerups.some(
+    (powerup) => powerup.position.x === x && powerup.position.y === y,
+  );
+  if (hasPowerup) {
+    return { canPlace: false, reason: 'Cell occupied by powerup' };
+  }
+
+  // Check if position is occupied by a landmine
+  const hasLandmine = landmines.some(
+    (landmine) => landmine.position.x === x && landmine.position.y === y,
+  );
+  if (hasLandmine) {
+    return { canPlace: false, reason: 'Cell occupied by landmine' };
+  }
+
   // Check if placement would block all paths
+  // Include the new tower position, existing obstacles, and any placeables that block paths
   const newTowerPositions = [...towers.map((t) => t.position), { x, y }];
-  const allBlockedPositions = [...newTowerPositions, ...obstacles];
+  const baseBlockedPositions = [...newTowerPositions, ...obstacles];
+  const allBlockedPositions = combineBlockedPositions(
+    baseBlockedPositions,
+    placeables,
+  );
 
   const testPaths = findPathsForMultipleStartsAndGoals(
     startPositions,
     goalPositions,
     allBlockedPositions,
-    gridSize,
+    gridWidth,
+    gridHeight,
   );
 
   const allPathsValid = testPaths.every(
@@ -74,13 +124,15 @@ export function isPathBlocked(
   blockedPositions: Position[],
   startPositions: Position[],
   goalPositions: Position[],
-  gridSize: number,
+  gridWidth: number,
+  gridHeight: number,
 ): boolean {
   const paths = findPathsForMultipleStartsAndGoals(
     startPositions,
     goalPositions,
     blockedPositions,
-    gridSize,
+    gridWidth,
+    gridHeight,
   );
 
   return paths.some((path) => path === null || path.length === 0);

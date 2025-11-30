@@ -134,12 +134,21 @@ class ParticlePool {
       }
 
       // Update position and life in-place
-      const velX = this.velX[readIdx] ?? 0;
-      const velY = this.velY[readIdx] ?? 0;
+      let velX = this.velX[readIdx] ?? 0;
+      let velY = this.velY[readIdx] ?? 0;
       const posX = this.posX[readIdx] ?? 0;
       const posY = this.posY[readIdx] ?? 0;
+
+      // Apply exponential deceleration for explosive feel (fast initial, rapid slowdown)
+      // Stronger deceleration (0.85 = 15% loss per frame) creates explosive burst then quick stop
+      const deceleration = 0.85;
+      velX *= deceleration;
+      velY *= deceleration;
+
       this.posX[readIdx] = posX + velX * gameSpeed;
       this.posY[readIdx] = posY + velY * gameSpeed;
+      this.velX[readIdx] = velX;
+      this.velY[readIdx] = velY;
       this.life[readIdx] = newLife;
 
       // Compact the active region

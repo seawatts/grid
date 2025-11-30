@@ -33,7 +33,7 @@ export default function TowerManagement({
 }) {
   const activeWavePowerUps = useGameStore((state) => state.activeWavePowerUps);
   const runUpgrade = useGameStore((state) => state.runUpgrade);
-  const powerups = useGameStore((state) => state.powerups);
+  const placeables = useGameStore((state) => state.placeables);
   const getAdjacentTowers = useGameStore((state) => state.getAdjacentTowers);
 
   const stats = TOWER_STATS[tower.type];
@@ -67,15 +67,16 @@ export default function TowerManagement({
 
   const color = towerColors[tower.type];
 
-  const tilePowerup = useMemo(
-    () =>
-      powerups.find(
-        (p) =>
-          p.position.x === tower.position.x &&
-          p.position.y === tower.position.y,
-      ),
-    [powerups, tower.position.x, tower.position.y],
-  );
+  const tilePowerup = useMemo(() => {
+    const found = placeables.find(
+      (p) =>
+        p.category === 'powerup' &&
+        p.positions.some(
+          (pos) => pos.x === tower.position.x && pos.y === tower.position.y,
+        ),
+    );
+    return found && found.category === 'powerup' ? found : undefined;
+  }, [placeables, tower.position.x, tower.position.y]);
 
   const adjacentCount = useMemo(() => {
     if (!getAdjacentTowers) return 0;
@@ -90,7 +91,10 @@ export default function TowerManagement({
   const damageParams = {
     activeWavePowerUps,
     adjacentTowerCount: adjacentCount,
-    powerup: tilePowerup,
+    powerup:
+      tilePowerup && tilePowerup.category === 'powerup'
+        ? tilePowerup
+        : undefined,
     runUpgrade,
     tower,
   };

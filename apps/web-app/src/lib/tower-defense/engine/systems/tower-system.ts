@@ -7,6 +7,7 @@ import type {
 } from '../../store/types';
 import {
   calculateFireRate,
+  calculatePenetration,
   calculateTowerRange,
 } from '../../utils/calculations';
 
@@ -69,9 +70,28 @@ export class TowerSystem implements GameSystem {
       towersModified = true;
       updatedTowers.push({ ...tower, lastShot: timestamp });
 
+      // Calculate penetration
+      const penetration = calculatePenetration({
+        activeWavePowerUps,
+        runUpgrade,
+        tower,
+      });
+
+      // Calculate direction vector from tower to target
+      const dx = target.position.x - tower.position.x;
+      const dy = target.position.y - tower.position.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+
+      // Normalize direction vector
+      const direction =
+        distance > 0 ? { x: dx / distance, y: dy / distance } : { x: 0, y: 0 };
+
       // Create projectile with unique ID
       newProjectiles.push({
+        direction,
+        hitEnemyIds: new Set<number>(),
         id: projectileIdCounter++,
+        penetrationRemaining: penetration,
         position: { ...tower.position },
         sourcePosition: { ...tower.position },
         target: { ...target.position },

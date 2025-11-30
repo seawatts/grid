@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { DEFAULT_PROGRESS, withProgressDefaults } from '../constants/progress';
 import { UPGRADES } from '../constants/upgrades';
 import type { PlayerProgress, UpgradeType } from '../game-types';
@@ -89,7 +89,7 @@ export function useGameProgress() {
     });
   };
 
-  const addEnergy = (amount: number) => {
+  const addEnergy = useCallback((amount: number) => {
     setProgress((prev) => {
       const updated = updateEnergy(prev);
       const maxEnergy = updated.maxEnergy;
@@ -98,7 +98,7 @@ export function useGameProgress() {
         energy: Math.min(updated.energy + amount, maxEnergy),
       };
     });
-  };
+  }, []);
 
   const spendEnergy = (amount: number): boolean => {
     let success = false;

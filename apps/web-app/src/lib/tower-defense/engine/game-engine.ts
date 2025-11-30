@@ -1,12 +1,6 @@
-import { MAX_WAVES } from '../constants/balance';
 import { POWERUP_CONFIGS } from '../constants/placeables';
 import type { GameState, SystemUpdateResult } from '../store/types';
 import { shouldResetCombo } from '../utils/calculations';
-import {
-  ensurePowerupFields,
-  getPowerupLifetime,
-  hasTowerOnPowerup,
-} from '../utils/powerups';
 import { CollisionSystem } from './systems/collision-system';
 import { EnemySystem } from './systems/enemy-system';
 import { ItemSystem } from './systems/item-system';
@@ -162,7 +156,7 @@ export class GameEngine {
     }
 
     if (
-      state.wave >= MAX_WAVES &&
+      state.wave >= state.maxWaves &&
       !state.isWaveActive &&
       state.spawnedEnemies.length === 0 &&
       state.unspawnedEnemies.length === 0
@@ -196,9 +190,6 @@ export class GameEngine {
 
     return {
       ...waveUpdates,
-      ...(powerupUpdates?.powerups
-        ? { powerups: powerupUpdates.powerups }
-        : {}),
       ...(powerupUpdates?.placeables
         ? { placeables: powerupUpdates.placeables }
         : {}),
@@ -215,7 +206,6 @@ export class GameEngine {
     count = 1,
     clearExisting = true,
   ): SystemUpdateResult {
-    // Use new unified system, fallback to legacy for backward compatibility
     return this.itemSystem.generatePlaceables(state, count, clearExisting);
   }
 
@@ -227,25 +217,6 @@ export class GameEngine {
   }
 
   private applyPowerupDecay(state: GameState) {
-    // Update legacy powerups
-    const lifetime = getPowerupLifetime(state.progress);
-    const updatedLegacyPowerups = state.powerups
-      .map((powerup) => ensurePowerupFields(powerup, lifetime))
-      .map((powerup) => {
-        const bound = hasTowerOnPowerup(powerup, state.towers);
-        if (bound) {
-          return { ...powerup, isTowerBound: true };
-        }
-
-        const remaining = Math.max(powerup.remainingWaves - 1, 0);
-        return {
-          ...powerup,
-          isTowerBound: false,
-          remainingWaves: remaining,
-        };
-      })
-      .filter((powerup) => powerup.isTowerBound || powerup.remainingWaves > 0);
-
     // Update placeable powerups
     const updatedPlaceables = state.placeables
       .map((item) => {
@@ -285,7 +256,6 @@ export class GameEngine {
     // Return as SystemUpdateResult
     const result: SystemUpdateResult = {
       placeables: updatedPlaceables,
-      powerups: updatedLegacyPowerups,
     };
     return result;
   }

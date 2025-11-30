@@ -1,12 +1,10 @@
 import type {
   DamageNumber,
   Enemy,
-  Landmine,
   Particle,
   PlaceableItem,
   PlayerProgress,
   Position,
-  PowerUp,
   Projectile,
   RunUpgrade,
   Tower,
@@ -17,6 +15,8 @@ import type {
 export interface GameState {
   // Core game state
   grid: string[][];
+  gridWidth: number; // Number of columns
+  gridHeight: number; // Number of rows
   towers: Tower[];
   spawnedEnemies: Enemy[];
   unspawnedEnemies: Enemy[];
@@ -25,9 +25,6 @@ export interface GameState {
   damageNumbers: DamageNumber[];
   // Unified placeable system
   placeables: PlaceableItem[];
-  // Legacy types (kept for backward compatibility during migration)
-  powerups: PowerUp[];
-  landmines: Landmine[];
 
   // Game stats
   money: number;
@@ -35,6 +32,7 @@ export interface GameState {
   score: number;
   combo: number;
   wave: number;
+  maxWaves: number;
 
   // Game status
   isWaveActive: boolean;
@@ -56,7 +54,19 @@ export interface GameState {
   // UI state
   selectedTowerType: TowerType | null;
   selectedTower: Tower | null;
-  selectedItem: PlaceableItem | PowerUp | Landmine | null;
+  selectedItem: PlaceableItem | null;
+
+  // UI display state
+  cellSize: number;
+  isMobile: boolean;
+  showSettings: boolean;
+  showUI: boolean;
+  showActivePowerUps: boolean;
+  showWaveInfo: boolean;
+  wasPausedBeforeWaveInfo: boolean;
+  debugPaths: Position[][];
+  animatedPathLengths: number[];
+  availablePowerUps: WavePowerUp[];
 
   // Settings
   autoAdvance: boolean;
@@ -71,9 +81,6 @@ export interface GameState {
   particleIdCounter: number;
   damageNumberIdCounter: number;
   placeableIdCounter: number;
-  // Legacy counters (kept for backward compatibility)
-  powerupIdCounter: number;
-  landmineIdCounter: number;
 
   // Timing
   lastKillTime: number;
@@ -93,9 +100,6 @@ export interface SystemUpdateResult {
   particles?: Particle[];
   damageNumbers?: DamageNumber[];
   placeables?: PlaceableItem[];
-  // Legacy types (kept for backward compatibility)
-  powerups?: PowerUp[];
-  landmines?: Landmine[];
   money?: number;
   lives?: number;
   score?: number;
@@ -109,9 +113,6 @@ export interface SystemUpdateResult {
   damageNumberIdCounter?: number;
   enemyIdCounter?: number;
   placeableIdCounter?: number;
-  // Legacy counters (kept for backward compatibility)
-  powerupIdCounter?: number;
-  landmineIdCounter?: number;
 }
 
 export interface GameSystem {

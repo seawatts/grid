@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import {
-  GRID_SIZE,
+  calculateOptimalGridDimensions,
+  MAX_WAVES,
   START_LIVES,
   START_MONEY,
   TOWER_STATS,
@@ -10,13 +11,12 @@ import {
   createDefaultProgress,
   withProgressDefaults,
 } from '../constants/progress';
-import { getMapById } from '../game-maps';
+import { GRID_SIZE } from '../game-constants';
+import { adaptMapPositions, getMapById } from '../game-maps';
 import type {
   ItemCategory,
-  Landmine,
   PlaceableItem,
   Position,
-  PowerUp,
   PowerupType,
   Tower,
   TowerType,
@@ -24,26 +24,50 @@ import type {
   WavePowerUp,
 } from '../game-types';
 import type { SavedGameState } from '../hooks/use-game-state-persistence';
-import { hasTowerOnPowerup } from '../utils/powerups';
+import { findPathsForMultipleStartsAndGoals } from '../pathfinding';
 import type { GameConfig, GameState } from './types';
+
+// Entity types for counter management
+export type EntityType =
+  | 'tower'
+  | 'enemy'
+  | 'projectile'
+  | 'particle'
+  | 'damageNumber'
+  | 'placeable';
+
+const ENTITY_COUNTER_MAP: Record<EntityType, keyof GameState> = {
+  damageNumber: 'damageNumberIdCounter',
+  enemy: 'enemyIdCounter',
+  particle: 'particleIdCounter',
+  placeable: 'placeableIdCounter',
+  projectile: 'projectileIdCounter',
+  tower: 'towerIdCounter',
+} as const;
 
 const createInitialState = (): GameState => ({
   activeWavePowerUps: [],
+  animatedPathLengths: [],
   autoAdvance: false,
+  availablePowerUps: [],
+  cellSize: 28,
   combo: 0,
   damageNumberIdCounter: 0,
   damageNumbers: [],
+  debugPaths: [],
   enemyIdCounter: 0,
   gameSpeed: 1,
   gameStatus: 'playing',
   goalPositions: [],
   grid: [],
+  gridHeight: 12, // Default rows
+  gridWidth: 12, // Default columns
+  isMobile: true,
   isPaused: false,
   isWaveActive: false,
-  landmineIdCounter: 0,
-  landmines: [],
   lastKillTime: 0,
   lives: START_LIVES,
+  maxWaves: MAX_WAVES,
   money: START_MONEY,
   obstacles: [],
   particleIdCounter: 0,
@@ -51,8 +75,6 @@ const createInitialState = (): GameState => ({
   pendingPowerUpSelection: false,
   placeableIdCounter: 0,
   placeables: [],
-  powerupIdCounter: 0,
-  powerups: [],
   progress: createDefaultProgress(),
   projectileIdCounter: 0,
   projectiles: [],
@@ -60,22 +82,21 @@ const createInitialState = (): GameState => ({
   selectedItem: null,
   selectedTower: null,
   selectedTowerType: null,
+  showActivePowerUps: false,
   showDamageNumbers: true,
   showGrid: false,
   showPerformanceMonitor: false,
+  showSettings: false,
+  showUI: false,
+  showWaveInfo: false,
   spawnedEnemies: [],
   startPositions: [],
   towerIdCounter: 0,
   towers: [],
   unspawnedEnemies: [],
+  wasPausedBeforeWaveInfo: false,
   wave: 0,
 });
-
-const bindPowerupsToTowers = (powerups: PowerUp[], towers: Tower[]) =>
-  powerups.map((powerup) => ({
-    ...powerup,
-    isTowerBound: hasTowerOnPowerup(powerup, towers),
-  }));
 
 interface GameStore extends GameState {
   // Actions
@@ -102,15 +123,12 @@ interface GameStore extends GameState {
   updateDamageNumbers: (damageNumbers: GameState['damageNumbers']) => void;
 
   // Items actions
-  setSelectedItem: (item: PlaceableItem | PowerUp | Landmine | null) => void;
+  setSelectedItem: (item: PlaceableItem | null) => void;
   updatePlaceables: (placeables: PlaceableItem[]) => void;
   getPlaceablesByCategory: (category: ItemCategory) => PlaceableItem[];
   getPlaceablesByType: (type: TrapType | PowerupType) => PlaceableItem[];
   getPlaceablesAtPosition: (pos: Position) => PlaceableItem[];
   getBlockingPlaceables: () => PlaceableItem[];
-  // Legacy methods (kept for backward compatibility)
-  updatePowerups: (powerups: PowerUp[]) => void;
-  updateLandmines: (landmines: Landmine[]) => void;
 
   // Game state actions
   setMoney: (money: number) => void;
@@ -132,24 +150,32 @@ interface GameStore extends GameState {
   togglePerformanceMonitor: () => void;
   toggleDamageNumbers: () => void;
 
+  // UI state actions
+  setCellSize: (size: number) => void;
+  setIsMobile: (isMobile: boolean) => void;
+  setShowSettings: (show: boolean) => void;
+  setShowUI: (show: boolean) => void;
+  setShowActivePowerUps: (show: boolean) => void;
+  setShowWaveInfo: (show: boolean) => void;
+  setWasPausedBeforeWaveInfo: (wasPaused: boolean) => void;
+  setDebugPaths: (paths: Position[][]) => void;
+  setAnimatedPathLengths: (lengths: number[]) => void;
+  setAvailablePowerUps: (powerUps: WavePowerUp[]) => void;
+
   // Counter actions
+  getNextId: (entityType: EntityType) => number;
+  // Legacy individual methods (kept for backward compatibility, use getNextId instead)
   getNextTowerId: () => number;
   getNextEnemyId: () => number;
   getNextProjectileId: () => number;
   getNextParticleId: () => number;
   getNextDamageNumberId: () => number;
   getNextPlaceableId: () => number;
-  // Legacy methods (kept for backward compatibility)
-  getNextPowerupId: () => number;
-  getNextLandmineId: () => number;
   setProjectileIdCounter: (counter: number) => void;
   setDamageNumberIdCounter: (counter: number) => void;
   setParticleIdCounter: (counter: number) => void;
   setEnemyIdCounter: (counter: number) => void;
   setPlaceableIdCounter: (counter: number) => void;
-  // Legacy methods (kept for backward compatibility)
-  setPowerupIdCounter: (counter: number) => void;
-  setLandmineIdCounter: (counter: number) => void;
 
   // Computed values
   getAdjacentTowers: (position: Position) => Tower[];
@@ -186,7 +212,6 @@ export const useGameStore = create<GameStore>((set, get) => ({
       return {
         grid: newGrid,
         money: state.money - TOWER_STATS[tower.type].cost,
-        powerups: bindPowerupsToTowers(state.powerups, nextTowers),
         towers: nextTowers,
       };
     }),
@@ -257,55 +282,41 @@ export const useGameStore = create<GameStore>((set, get) => ({
     return state.placeables.filter((item) => itemBlocksPath(item));
   },
 
+  // Legacy individual methods (kept for backward compatibility)
   getNextDamageNumberId: () => {
-    const id = get().damageNumberIdCounter;
-    set((state) => ({
-      damageNumberIdCounter: state.damageNumberIdCounter + 1,
+    return get().getNextId('damageNumber');
+  },
+
+  getNextEnemyId: () => {
+    return get().getNextId('enemy');
+  },
+
+  // Generic counter manager
+  getNextId: (entityType: EntityType) => {
+    const counterKey = ENTITY_COUNTER_MAP[entityType];
+    const state = get();
+    const id = state[counterKey] as number;
+    set((prevState) => ({
+      ...prevState,
+      [counterKey]: (prevState[counterKey] as number) + 1,
     }));
     return id;
   },
 
-  getNextEnemyId: () => {
-    const id = get().enemyIdCounter;
-    set((state) => ({ enemyIdCounter: state.enemyIdCounter + 1 }));
-    return id;
-  },
-
-  getNextLandmineId: () => {
-    const id = get().landmineIdCounter;
-    set((state) => ({ landmineIdCounter: state.landmineIdCounter + 1 }));
-    return id;
-  },
-
   getNextParticleId: () => {
-    const id = get().particleIdCounter;
-    set((state) => ({ particleIdCounter: state.particleIdCounter + 1 }));
-    return id;
+    return get().getNextId('particle');
   },
 
   getNextPlaceableId: () => {
-    const id = get().placeableIdCounter;
-    set((state) => ({ placeableIdCounter: state.placeableIdCounter + 1 }));
-    return id;
-  },
-
-  getNextPowerupId: () => {
-    const id = get().powerupIdCounter;
-    set((state) => ({ powerupIdCounter: state.powerupIdCounter + 1 }));
-    return id;
+    return get().getNextId('placeable');
   },
 
   getNextProjectileId: () => {
-    const id = get().projectileIdCounter;
-    set((state) => ({ projectileIdCounter: state.projectileIdCounter + 1 }));
-    return id;
+    return get().getNextId('projectile');
   },
 
-  // Counter actions
   getNextTowerId: () => {
-    const id = get().towerIdCounter;
-    set((state) => ({ towerIdCounter: state.towerIdCounter + 1 }));
-    return id;
+    return get().getNextId('tower');
   },
 
   getPlaceablesAtPosition: (pos) => {
@@ -343,16 +354,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
       grid: state.grid,
       isPaused: state.isPaused,
       isWaveActive: state.isWaveActive,
-      landmineIdCounter: state.landmineIdCounter,
-      landmines: state.landmines,
       lives: state.lives,
       money: state.money,
       obstacles: state.obstacles,
       particleIdCounter: state.particleIdCounter,
       placeableIdCounter: state.placeableIdCounter,
       placeables: state.placeables,
-      powerupIdCounter: state.powerupIdCounter,
-      powerups: state.powerups,
       progress: state.progress,
       projectileIdCounter: state.projectileIdCounter,
       runUpgrade: state.runUpgrade,
@@ -370,33 +377,125 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const effectiveProgress = withProgressDefaults(progress);
     const selectedMap = getMapById(mapId);
 
-    const newGrid = Array(GRID_SIZE)
+    // Calculate optimal grid dimensions based on available screen space
+    // Use window dimensions if available, otherwise use defaults
+    let gridWidth = 12;
+    let gridHeight = 12;
+
+    if (typeof window !== 'undefined') {
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+      const headerHeight = width < 640 ? 100 : 120;
+      const footerHeight = width < 640 ? 140 : 160;
+      const padding = 32;
+
+      const availableHeight = height - headerHeight - footerHeight - padding;
+      const availableWidth = Math.min(width - padding, 896);
+
+      const dimensions = calculateOptimalGridDimensions(
+        availableWidth,
+        availableHeight,
+      );
+      gridWidth = dimensions.columns;
+      gridHeight = dimensions.rows;
+    }
+
+    const newGrid = Array(gridHeight)
       .fill(null)
-      .map(() => Array(GRID_SIZE).fill('empty'));
+      .map(() => Array(gridWidth).fill('empty'));
 
-    selectedMap.starts.forEach((pos) => {
-      const row = newGrid[pos.y];
-      if (row) row[pos.x] = 'start';
-    });
+    // Use preferred grid size from map if available, otherwise use GRID_SIZE (12) as original
+    const originalGridWidth =
+      selectedMap.preferredGridSize?.columns ?? GRID_SIZE;
+    const originalGridHeight = selectedMap.preferredGridSize?.rows ?? GRID_SIZE;
 
-    selectedMap.goals.forEach((pos) => {
-      const row = newGrid[pos.y];
-      if (row) row[pos.x] = 'goal';
-    });
+    // Adapt map positions if grid is different from original
+    const adaptedStarts = adaptMapPositions(
+      selectedMap.starts,
+      originalGridWidth,
+      originalGridHeight,
+      gridWidth,
+      gridHeight,
+    );
+    const adaptedGoals = adaptMapPositions(
+      selectedMap.goals,
+      originalGridWidth,
+      originalGridHeight,
+      gridWidth,
+      gridHeight,
+    );
+    const adaptedObstacles = adaptMapPositions(
+      selectedMap.obstacles,
+      originalGridWidth,
+      originalGridHeight,
+      gridWidth,
+      gridHeight,
+    );
 
-    selectedMap.obstacles.forEach((obstacle) => {
-      const isStart = selectedMap.starts.some(
-        (s) => s.x === obstacle.x && s.y === obstacle.y,
-      );
-      const isGoal = selectedMap.goals.some(
-        (g) => g.x === obstacle.x && g.y === obstacle.y,
-      );
-
-      if (!isStart && !isGoal) {
-        const row = newGrid[obstacle.y];
-        if (row) row[obstacle.x] = 'obstacle';
+    adaptedStarts.forEach((pos) => {
+      if (pos.x >= 0 && pos.x < gridWidth && pos.y >= 0 && pos.y < gridHeight) {
+        const row = newGrid[pos.y];
+        if (row) row[pos.x] = 'start';
       }
     });
+
+    adaptedGoals.forEach((pos) => {
+      if (pos.x >= 0 && pos.x < gridWidth && pos.y >= 0 && pos.y < gridHeight) {
+        const row = newGrid[pos.y];
+        if (row) row[pos.x] = 'goal';
+      }
+    });
+
+    adaptedObstacles.forEach((obstacle) => {
+      if (
+        obstacle.x >= 0 &&
+        obstacle.x < gridWidth &&
+        obstacle.y >= 0 &&
+        obstacle.y < gridHeight
+      ) {
+        const isStart = adaptedStarts.some(
+          (s) => s.x === obstacle.x && s.y === obstacle.y,
+        );
+        const isGoal = adaptedGoals.some(
+          (g) => g.x === obstacle.x && g.y === obstacle.y,
+        );
+
+        if (!isStart && !isGoal) {
+          const row = newGrid[obstacle.y];
+          if (row) row[obstacle.x] = 'obstacle';
+        }
+      }
+    });
+
+    // Validate that paths exist from all start positions to goal positions
+    // This catches map configuration issues where obstacles block all paths
+    const initialPaths = findPathsForMultipleStartsAndGoals(
+      adaptedStarts,
+      adaptedGoals,
+      adaptedObstacles,
+      gridWidth,
+      gridHeight,
+    );
+
+    if (initialPaths.some((p) => !p)) {
+      const blockedStartIndices = initialPaths
+        .map((path, idx) => (path === null ? idx : -1))
+        .filter((idx) => idx !== -1);
+      console.error(
+        'Map configuration error: Some spawn points are blocked by map obstacles after grid adaptation.',
+        {
+          adaptedGoals,
+          adaptedObstacles,
+          adaptedStarts,
+          blockedStartIndices,
+          gridHeight,
+          gridWidth,
+          mapId,
+        },
+      );
+      // Still set the state, but the error will be caught when trying to start a wave
+      // This allows the UI to load and show the problematic map
+    }
 
     const initialMoney =
       START_MONEY +
@@ -407,30 +506,34 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
     set({
       activeWavePowerUps: [],
+      animatedPathLengths: [],
       autoAdvance: false,
+      availablePowerUps: [],
+      cellSize: 28,
       combo: 0,
       damageNumberIdCounter: 0,
       damageNumbers: [],
+      debugPaths: [],
       enemyIdCounter: 0,
       gameSpeed: 1,
       gameStatus: 'playing',
-      goalPositions: selectedMap.goals,
+      goalPositions: adaptedGoals,
       grid: newGrid,
+      gridHeight,
+      gridWidth,
+      isMobile: true,
       isPaused: false,
       isWaveActive: false,
-      landmineIdCounter: 0,
-      landmines: [],
       lastKillTime: 0,
       lives: initialLives,
+      maxWaves: selectedMap.maxWaves,
       money: initialMoney,
-      obstacles: selectedMap.obstacles,
+      obstacles: adaptedObstacles,
       particleIdCounter: 0,
       particles: [],
       pendingPowerUpSelection: false,
       placeableIdCounter: 0,
       placeables: [],
-      powerupIdCounter: 0,
-      powerups: [],
       progress: effectiveProgress,
       projectileIdCounter: 0,
       projectiles: [],
@@ -439,19 +542,24 @@ export const useGameStore = create<GameStore>((set, get) => ({
       selectedItem: null,
       selectedTower: null,
       selectedTowerType: null,
+      showActivePowerUps: false,
       showDamageNumbers: true,
       showGrid: false,
       showPerformanceMonitor: false,
+      showSettings: false,
+      showUI: false,
+      showWaveInfo: false,
       spawnedEnemies: [],
-      startPositions: selectedMap.starts,
+      startPositions: adaptedStarts,
       towerIdCounter: 0,
       towers: [],
       unspawnedEnemies: [],
+      wasPausedBeforeWaveInfo: false,
       wave: 0,
     });
   },
 
-  loadSavedState: (savedState: SavedGameState, _mapId: string) => {
+  loadSavedState: (savedState: SavedGameState, mapId: string) => {
     // Ensure activeWavePowerUps have rarity (default to 'common' for backward compatibility)
     const activeWavePowerUps = (savedState.activeWavePowerUps ?? []).map(
       (powerup) => ({
@@ -460,24 +568,34 @@ export const useGameStore = create<GameStore>((set, get) => ({
       }),
     );
 
+    // Calculate grid dimensions from saved grid (for backward compatibility)
+    const gridHeight = savedState.grid.length;
+    const gridWidth = savedState.grid[0]?.length || 12;
+
     set({
       activeWavePowerUps,
+      animatedPathLengths: [],
       autoAdvance: savedState.autoAdvance,
+      availablePowerUps: [],
+      cellSize: 28,
       combo: 0,
       damageNumberIdCounter: savedState.damageNumberIdCounter,
       damageNumbers: [],
+      debugPaths: [],
       enemyIdCounter: savedState.enemyIdCounter,
       gameSpeed: savedState.gameSpeed,
       gameStatus: savedState.gameStatus,
       goalPositions: savedState.goalPositions,
       // Load saved state
       grid: savedState.grid,
+      gridHeight,
+      gridWidth,
+      isMobile: true,
       isPaused: savedState.isPaused,
       isWaveActive: savedState.isWaveActive,
-      landmineIdCounter: savedState.landmineIdCounter,
-      landmines: savedState.landmines,
       lastKillTime: 0,
       lives: savedState.lives,
+      maxWaves: getMapById(mapId).maxWaves,
       money: savedState.money,
       obstacles: savedState.obstacles,
       particleIdCounter: savedState.particleIdCounter,
@@ -485,8 +603,6 @@ export const useGameStore = create<GameStore>((set, get) => ({
       pendingPowerUpSelection: false,
       placeableIdCounter: savedState.placeableIdCounter ?? 0,
       placeables: savedState.placeables ?? [],
-      powerupIdCounter: savedState.powerupIdCounter,
-      powerups: bindPowerupsToTowers(savedState.powerups, savedState.towers),
       progress: withProgressDefaults(savedState.progress),
       projectileIdCounter: savedState.projectileIdCounter,
       projectiles: [],
@@ -495,8 +611,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
       selectedItem: null,
       selectedTower: null,
       selectedTowerType: null,
+      showActivePowerUps: false,
       showGrid: false,
       showPerformanceMonitor: false,
+      showSettings: false,
+      showUI: false,
+      showWaveInfo: false,
 
       // Reset transient state that doesn't persist
       spawnedEnemies: [],
@@ -504,6 +624,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       towerIdCounter: savedState.towerIdCounter,
       towers: savedState.towers,
       unspawnedEnemies: savedState.unspawnedEnemies,
+      wasPausedBeforeWaveInfo: false,
       wave: savedState.wave,
     });
   },
@@ -546,7 +667,6 @@ export const useGameStore = create<GameStore>((set, get) => ({
       const nextTowers = state.towers.filter((t) => t.id !== towerId);
       return {
         grid: newGrid,
-        powerups: bindPowerupsToTowers(state.powerups, nextTowers),
         towers: nextTowers,
       };
     }),
@@ -559,16 +679,22 @@ export const useGameStore = create<GameStore>((set, get) => ({
     })),
 
   resetGame: () => set(createInitialState()),
+
+  // UI state actions
+  setAnimatedPathLengths: (lengths) => set({ animatedPathLengths: lengths }),
   setAutoAdvance: (auto) => set({ autoAdvance: auto }),
+  setAvailablePowerUps: (powerUps) => set({ availablePowerUps: powerUps }),
+  setCellSize: (size) => set({ cellSize: size }),
   setCombo: (combo) => set({ combo }),
   setDamageNumberIdCounter: (counter) =>
     set({ damageNumberIdCounter: counter }),
+  setDebugPaths: (paths) => set({ debugPaths: paths }),
   setEnemyIdCounter: (counter) => set({ enemyIdCounter: counter }),
   setGameSpeed: (speed) => set({ gameSpeed: speed }),
   setGameStatus: (status) => set({ gameStatus: status }),
+  setIsMobile: (isMobile) => set({ isMobile }),
   setIsPaused: (paused) => set({ isPaused: paused }),
   setIsWaveActive: (active) => set({ isWaveActive: active }),
-  setLandmineIdCounter: (counter) => set({ landmineIdCounter: counter }),
   setLives: (lives) => set({ lives }),
 
   // Game state actions
@@ -578,7 +704,6 @@ export const useGameStore = create<GameStore>((set, get) => ({
   setPendingPowerUpSelection: (pending) =>
     set({ pendingPowerUpSelection: pending }),
   setPlaceableIdCounter: (counter) => set({ placeableIdCounter: counter }),
-  setPowerupIdCounter: (counter) => set({ powerupIdCounter: counter }),
 
   setProjectileIdCounter: (counter) => set({ projectileIdCounter: counter }),
   setScore: (score) => set({ score }),
@@ -589,7 +714,14 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   // Tower actions
   setSelectedTowerType: (type) => set({ selectedTowerType: type }),
+  setShowActivePowerUps: (show) => set({ showActivePowerUps: show }),
   setShowGrid: (show) => set({ showGrid: show }),
+  setShowSettings: (show) => set({ showSettings: show }),
+  setShowUI: (show) => set({ showUI: show }),
+  setShowWaveInfo: (show) => set({ showWaveInfo: show }),
+  setWasPausedBeforeWaveInfo: (wasPaused) =>
+    set({ wasPausedBeforeWaveInfo: wasPaused }),
+
   setWave: (wave) => set({ wave }),
   toggleAutoAdvance: () =>
     set((state) => ({ autoAdvance: !state.autoAdvance })),
@@ -599,7 +731,6 @@ export const useGameStore = create<GameStore>((set, get) => ({
   togglePerformanceMonitor: () =>
     set((state) => ({ showPerformanceMonitor: !state.showPerformanceMonitor })),
   updateDamageNumbers: (damageNumbers) => set({ damageNumbers }),
-  updateLandmines: (landmines) => set({ landmines }),
 
   // Timing
   updateLastKillTime: (time) => set({ lastKillTime: time }),
@@ -607,10 +738,6 @@ export const useGameStore = create<GameStore>((set, get) => ({
   // Visual effects actions
   updateParticles: (particles) => set({ particles }),
   updatePlaceables: (placeables) => set({ placeables }),
-  updatePowerups: (powerups) =>
-    set((state) => ({
-      powerups: bindPowerupsToTowers(powerups, state.towers),
-    })),
 
   // Projectile actions
   updateProjectiles: (projectiles) => set({ projectiles }),
@@ -618,11 +745,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   // Enemy actions
   updateSpawnedEnemies: (enemies) => set({ spawnedEnemies: enemies }),
 
-  updateTowers: (towers) =>
-    set((state) => ({
-      powerups: bindPowerupsToTowers(state.powerups, towers),
-      towers,
-    })),
+  updateTowers: (towers) => set({ towers }),
   updateUnspawnedEnemies: (enemies) => set({ unspawnedEnemies: enemies }),
 
   upgradeTower: (towerId) =>
@@ -642,3 +765,73 @@ export const useGameStore = create<GameStore>((set, get) => ({
       };
     }),
 }));
+
+// Grouped selectors for better performance and organization
+export const selectGameEntities = (state: GameStore) => ({
+  damageNumbers: state.damageNumbers,
+  particles: state.particles,
+  placeables: state.placeables,
+  projectiles: state.projectiles,
+  spawnedEnemies: state.spawnedEnemies,
+  towers: state.towers,
+  unspawnedEnemies: state.unspawnedEnemies,
+});
+
+export const selectUIState = (state: GameStore) => ({
+  animatedPathLengths: state.animatedPathLengths,
+  cellSize: state.cellSize,
+  debugPaths: state.debugPaths,
+  isMobile: state.isMobile,
+  selectedItem: state.selectedItem,
+  selectedTower: state.selectedTower,
+  selectedTowerType: state.selectedTowerType,
+  showActivePowerUps: state.showActivePowerUps,
+  showDamageNumbers: state.showDamageNumbers,
+  showGrid: state.showGrid,
+  showPerformanceMonitor: state.showPerformanceMonitor,
+  showSettings: state.showSettings,
+  showUI: state.showUI,
+  showWaveInfo: state.showWaveInfo,
+  wasPausedBeforeWaveInfo: state.wasPausedBeforeWaveInfo,
+});
+
+export const selectGameStats = (state: GameStore) => ({
+  autoAdvance: state.autoAdvance,
+  combo: state.combo,
+  gameSpeed: state.gameSpeed,
+  gameStatus: state.gameStatus,
+  isPaused: state.isPaused,
+  isWaveActive: state.isWaveActive,
+  lives: state.lives,
+  maxWaves: state.maxWaves,
+  money: state.money,
+  score: state.score,
+  wave: state.wave,
+});
+
+export const selectMapInfo = (state: GameStore) => ({
+  goalPositions: state.goalPositions,
+  grid: state.grid,
+  obstacles: state.obstacles,
+  startPositions: state.startPositions,
+});
+
+export const selectPowerUpState = (state: GameStore) => ({
+  activeWavePowerUps: state.activeWavePowerUps,
+  availablePowerUps: state.availablePowerUps,
+  pendingPowerUpSelection: state.pendingPowerUpSelection,
+});
+
+export const selectUIActions = (state: GameStore) => ({
+  setSelectedItem: state.setSelectedItem,
+  setSelectedTower: state.setSelectedTower,
+  setShowActivePowerUps: state.setShowActivePowerUps,
+  setShowGrid: state.setShowGrid,
+  setShowSettings: state.setShowSettings,
+  setShowUI: state.setShowUI,
+  setShowWaveInfo: state.setShowWaveInfo,
+  setWasPausedBeforeWaveInfo: state.setWasPausedBeforeWaveInfo,
+  toggleDamageNumbers: state.toggleDamageNumbers,
+  togglePause: state.togglePause,
+  togglePerformanceMonitor: state.togglePerformanceMonitor,
+});

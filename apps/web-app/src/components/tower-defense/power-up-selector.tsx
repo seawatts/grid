@@ -138,7 +138,8 @@ export default function PowerUpSelector({
           </h2>
 
           <p className="text-center text-gray-400 text-xs sm:text-sm mb-3 sm:mb-6 hidden sm:block">
-            {powerUps[0]?.duration === 0
+            {powerUps[0]?.duration === 0 ||
+            powerUps[0]?.duration === 'permanent'
               ? 'Select one power-up to start your mission.'
               : 'Wave complete! Select one power-up for the next phase.'}
           </p>
@@ -182,13 +183,6 @@ export default function PowerUpSelector({
                     onClick={(e) => {
                       e.stopPropagation();
                       setSelectedPowerUpForDetails(powerUp);
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        setSelectedPowerUpForDetails(powerUp);
-                      }
                     }}
                     type="button"
                   >

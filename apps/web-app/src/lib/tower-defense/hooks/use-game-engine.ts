@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useRef } from 'react';
+import { toast } from 'sonner';
 import { GameEngine } from '../engine/game-engine';
 import { useGameStore } from '../store/game-store';
 import type { GameConfig, SystemUpdateResult } from '../store/types';
+import { applySystemUpdates } from '../store/update-batcher';
 
 export function useGameEngine(config?: GameConfig) {
   const engineRef = useRef<GameEngine | null>(null);
@@ -10,6 +12,8 @@ export function useGameEngine(config?: GameConfig) {
   // Track initialization to prevent re-initialization on progress changes
   const lastMapIdRef = useRef<string | undefined>(undefined);
   const lastRunUpgradeRef = useRef<string | undefined>(undefined);
+  // Track if initial items have been generated to prevent duplicate generation
+  const hasGeneratedInitialItems = useRef(false);
 
   // Select only state values (not actions) to avoid dependency issues
   const gameStatus = useGameStore((state) => state.gameStatus);
@@ -38,58 +42,27 @@ export function useGameEngine(config?: GameConfig) {
     if (shouldInitialize) {
       lastMapIdRef.current = config.mapId;
       lastRunUpgradeRef.current = runUpgradeKey;
+      hasGeneratedInitialItems.current = false; // Reset flag when map changes
       useGameStore.getState().initializeGame(config);
     }
   }, [config]);
 
-  // Handle state updates from engine
-  // Use getState() to avoid including actions in dependencies
+  // Handle state updates from engine using batched updates
   const handleStateUpdate = useCallback((updates: SystemUpdateResult) => {
-    const store = useGameStore.getState();
+    // Handle score updates separately to calculate difference
+    if (updates.score !== undefined) {
+      const currentScore = stateRef.current.score;
+      const scoreDiff = updates.score - currentScore;
+      if (scoreDiff !== 0) {
+        useGameStore.getState().addScore(scoreDiff);
+      }
+    }
 
-    if (updates.spawnedEnemies !== undefined)
-      store.updateSpawnedEnemies(updates.spawnedEnemies);
-    if (updates.unspawnedEnemies !== undefined)
-      store.updateUnspawnedEnemies(updates.unspawnedEnemies);
-    if (updates.towers !== undefined) store.updateTowers(updates.towers);
-    if (updates.projectiles !== undefined)
-      store.updateProjectiles(updates.projectiles);
-    if (updates.particles !== undefined)
-      store.updateParticles(updates.particles);
-    if (updates.particleIdCounter !== undefined)
-      store.setParticleIdCounter(updates.particleIdCounter);
-    if (updates.damageNumbers !== undefined)
-      store.updateDamageNumbers(updates.damageNumbers);
-    if (updates.damageNumberIdCounter !== undefined)
-      store.setDamageNumberIdCounter(updates.damageNumberIdCounter);
-    if (updates.placeables !== undefined)
-      store.updatePlaceables(updates.placeables);
-    if (updates.placeableIdCounter !== undefined)
-      store.setPlaceableIdCounter(updates.placeableIdCounter);
-    // Legacy updates (for backward compatibility)
-    if (updates.powerups !== undefined) store.updatePowerups(updates.powerups);
-    if (updates.landmines !== undefined)
-      store.updateLandmines(updates.landmines);
-    if (updates.money !== undefined) store.setMoney(updates.money);
-    if (updates.lives !== undefined) store.setLives(updates.lives);
-    if (updates.score !== undefined)
-      store.addScore(updates.score - stateRef.current.score);
-    if (updates.combo !== undefined) store.setCombo(updates.combo);
-    if (updates.wave !== undefined) store.setWave(updates.wave);
-    if (updates.isWaveActive !== undefined)
-      store.setIsWaveActive(updates.isWaveActive);
-    if (updates.gameStatus !== undefined)
-      store.setGameStatus(updates.gameStatus);
-    if (updates.lastKillTime !== undefined)
-      store.updateLastKillTime(updates.lastKillTime);
-    if (updates.projectileIdCounter !== undefined)
-      store.setProjectileIdCounter(updates.projectileIdCounter);
-    if (updates.enemyIdCounter !== undefined)
-      store.setEnemyIdCounter(updates.enemyIdCounter);
-    if (updates.powerupIdCounter !== undefined)
-      store.setPowerupIdCounter(updates.powerupIdCounter);
-    if (updates.landmineIdCounter !== undefined)
-      store.setLandmineIdCounter(updates.landmineIdCounter);
+    // Apply all other updates in a single batched call
+    applySystemUpdates(updates);
+
+    // Update state ref for next comparison
+    stateRef.current = useGameStore.getState();
   }, []); // Empty dependencies - we use getState() inside
 
   // Initialize engine
@@ -130,8 +103,26 @@ export function useGameEngine(config?: GameConfig) {
   const startWave = useCallback(() => {
     if (!engineRef.current) return;
 
-    const updates = engineRef.current.startWave(stateRef.current);
-    handleStateUpdate(updates);
+    try {
+      const updates = engineRef.current.startWave(stateRef.current);
+      handleStateUpdate(updates);
+    } catch (error) {
+      // Handle path blocking errors
+      if (error instanceof Error) {
+        console.error('Failed to start wave:', error);
+        toast.error('Cannot Start Wave', {
+          description: error.message,
+          duration: 5000,
+        });
+      } else {
+        console.error('Failed to start wave:', error);
+        toast.error('Cannot Start Wave', {
+          description:
+            'Some spawn points are blocked. Please remove towers or items blocking the path.',
+          duration: 5000,
+        });
+      }
+    }
   }, [handleStateUpdate]);
 
   const generateItems = useCallback(() => {
@@ -144,14 +135,36 @@ export function useGameEngine(config?: GameConfig) {
   const resetGame = useCallback(() => {
     if (config) {
       useGameStore.getState().initializeGame(config);
+      // Reset the flag so items can be regenerated after reset
+      hasGeneratedInitialItems.current = false;
+      // Generate items after reset, even if mapId hasn't changed
+      // This ensures placeables are regenerated when resetting the same map
+      if (engineRef.current) {
+        // Use setTimeout to ensure initializeGame has completed
+        setTimeout(() => {
+          if (engineRef.current) {
+            const updates = engineRef.current.generateItems(
+              useGameStore.getState(),
+              1,
+              true,
+            );
+            handleStateUpdate(updates);
+            hasGeneratedInitialItems.current = true;
+          }
+        }, 0);
+      }
     }
-  }, [config]);
+  }, [config, handleStateUpdate]);
 
   // Generate initial items when game starts (wave 0 -> wave 1)
   useEffect(() => {
-    if (config && engineRef.current) {
-      // Generate items for wave 1 on initialization
-      generateItems();
+    if (config && engineRef.current && !hasGeneratedInitialItems.current) {
+      const currentState = useGameStore.getState();
+      // Only generate if wave is 0 and no items exist
+      if (currentState.wave === 0 && currentState.placeables.length === 0) {
+        generateItems();
+        hasGeneratedInitialItems.current = true;
+      }
     }
   }, [
     config?.mapId, // Generate items for wave 1 on initialization

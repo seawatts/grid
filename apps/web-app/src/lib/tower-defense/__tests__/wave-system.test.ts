@@ -18,8 +18,6 @@ describe('Wave System Integration Tests', () => {
       .map(() => Array(12).fill('empty')),
     isPaused: false,
     isWaveActive: false,
-    landmineIdCounter: 0,
-    landmines: [],
     lastKillTime: 0,
     lives: 10,
     money: 500,
@@ -29,8 +27,6 @@ describe('Wave System Integration Tests', () => {
     pendingPowerUpSelection: false,
     placeableIdCounter: 0,
     placeables: [],
-    powerupIdCounter: 0,
-    powerups: [],
     progress: {
       energy: 100,
       energyRecoveryRate: 1,

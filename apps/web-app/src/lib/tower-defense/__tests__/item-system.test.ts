@@ -1,42 +1,49 @@
 import { describe, expect, it } from 'bun:test';
 import { ItemSystem } from '../engine/systems/item-system';
-import { createTestPowerup, createTestState } from './test-helpers';
+import { isPowerupItem, isTrapItem } from '../game-types';
+import {
+  createTestPlaceablePowerup,
+  createTestPlaceableTrap,
+  createTestState,
+} from './test-helpers';
 
 describe('Item System Tests', () => {
   describe('Powerup generation', () => {
     it('should generate powerups on empty cells', () => {
       const state = createTestState({
-        powerupIdCounter: 0,
-        powerups: [],
+        placeableIdCounter: 0,
+        placeables: [],
       });
 
       const itemSystem = new ItemSystem();
-      const result = itemSystem.generateWaveItems(state, 1);
+      const result = itemSystem.generatePlaceables(state, 1, true);
 
-      expect(result.powerups).toBeDefined();
-      expect(result.powerups?.length).toBeGreaterThan(0);
+      expect(result.placeables).toBeDefined();
+      const powerups = result.placeables?.filter((p) => isPowerupItem(p)) ?? [];
+      expect(powerups.length).toBeGreaterThan(0);
 
       // All powerups should have valid positions
-      if (result.powerups) {
-        for (const powerup of result.powerups) {
-          expect(powerup.position.x).toBeGreaterThanOrEqual(0);
-          expect(powerup.position.x).toBeLessThan(12);
-          expect(powerup.position.y).toBeGreaterThanOrEqual(0);
-          expect(powerup.position.y).toBeLessThan(12);
+      for (const powerup of powerups) {
+        for (const pos of powerup.positions) {
+          expect(pos.x).toBeGreaterThanOrEqual(0);
+          expect(pos.x).toBeLessThan(12);
+          expect(pos.y).toBeGreaterThanOrEqual(0);
+          expect(pos.y).toBeLessThan(12);
         }
       }
     });
 
     it('should assign unique IDs to powerups', () => {
       const state = createTestState({
-        powerupIdCounter: 10,
-        powerups: [],
+        placeableIdCounter: 10,
+        placeables: [],
       });
 
       const itemSystem = new ItemSystem();
-      const result = itemSystem.generateWaveItems(state, 1);
+      const result = itemSystem.generatePlaceables(state, 1, true);
 
-      const ids = result.powerups?.map((p) => p.id) ?? [];
+      const powerups = result.placeables?.filter((p) => isPowerupItem(p)) ?? [];
+      const ids = powerups.map((p) => p.id);
       const uniqueIds = new Set(ids);
       expect(uniqueIds.size).toBe(ids.length);
 
@@ -48,7 +55,6 @@ describe('Item System Tests', () => {
 
     it('should respect upgrade effects on powerup count', () => {
       const stateNoUpgrade = createTestState({
-        powerups: [],
         progress: {
           energy: 100,
           energyRecoveryRate: 1,
@@ -73,7 +79,6 @@ describe('Item System Tests', () => {
       });
 
       const stateWithUpgrade = createTestState({
-        powerups: [],
         progress: {
           energy: 100,
           energyRecoveryRate: 1,
@@ -98,21 +103,29 @@ describe('Item System Tests', () => {
       });
 
       const itemSystem = new ItemSystem();
-      const resultNoUpgrade = itemSystem.generateWaveItems(stateNoUpgrade, 1);
-      const resultWithUpgrade = itemSystem.generateWaveItems(
+      const resultNoUpgrade = itemSystem.generatePlaceables(
+        stateNoUpgrade,
+        1,
+        true,
+      );
+      const resultWithUpgrade = itemSystem.generatePlaceables(
         stateWithUpgrade,
         1,
+        true,
       );
 
       // With upgrade should generate more powerups
-      const noUpgradeLength = resultNoUpgrade.powerups?.length ?? 0;
-      const withUpgradeLength = resultWithUpgrade.powerups?.length ?? 0;
+      const noUpgradePowerups =
+        resultNoUpgrade.placeables?.filter((p) => isPowerupItem(p)) ?? [];
+      const withUpgradePowerups =
+        resultWithUpgrade.placeables?.filter((p) => isPowerupItem(p)) ?? [];
+      const noUpgradeLength = noUpgradePowerups.length;
+      const withUpgradeLength = withUpgradePowerups.length;
       expect(withUpgradeLength).toBeGreaterThanOrEqual(noUpgradeLength);
     });
 
     it('should respect upgrade effects on powerup boost value', () => {
       const stateNoUpgrade = createTestState({
-        powerups: [],
         progress: {
           energy: 100,
           energyRecoveryRate: 1,
@@ -137,7 +150,6 @@ describe('Item System Tests', () => {
       });
 
       const stateWithUpgrade = createTestState({
-        powerups: [],
         progress: {
           energy: 100,
           energyRecoveryRate: 1,
@@ -169,8 +181,12 @@ describe('Item System Tests', () => {
       );
 
       // With upgrade should have higher boost values
-      const noUpgradeBoost = resultNoUpgrade.powerups?.[0]?.boost;
-      const withUpgradeBoost = resultWithUpgrade.powerups?.[0]?.boost;
+      const noUpgradePowerups =
+        resultNoUpgrade.placeables?.filter((p) => isPowerupItem(p)) ?? [];
+      const withUpgradePowerups =
+        resultWithUpgrade.placeables?.filter((p) => isPowerupItem(p)) ?? [];
+      const noUpgradeBoost = noUpgradePowerups[0]?.boost;
+      const withUpgradeBoost = withUpgradePowerups[0]?.boost;
       if (noUpgradeBoost !== undefined && withUpgradeBoost !== undefined) {
         expect(withUpgradeBoost).toBeGreaterThanOrEqual(noUpgradeBoost);
       }
@@ -178,12 +194,8 @@ describe('Item System Tests', () => {
 
     it('should scale powerup lifetime with persistence upgrade', () => {
       const itemSystem = new ItemSystem();
-      const baseState = createTestState({
-        powerups: [],
-      });
-      const upgradedState = createTestState({
-        powerups: [],
-      });
+      const baseState = createTestState({});
+      const upgradedState = createTestState({});
       upgradedState.progress.upgrades.powerNodePersistence = 4;
 
       const baseResult = itemSystem.generateWaveItems(baseState, 1);
@@ -204,7 +216,6 @@ describe('Item System Tests', () => {
               .fill(null)
               .map((_, x) => (x === 0 && y === 0 ? 'tower' : 'empty')),
           ),
-        powerups: [],
       });
 
       const itemSystem = new ItemSystem();
@@ -218,19 +229,18 @@ describe('Item System Tests', () => {
     });
 
     it('should avoid cells occupied by existing powerups', () => {
+      const existingPowerup = createTestPlaceablePowerup({
+        id: 1,
+        positions: [{ x: 5, y: 5 }],
+      });
       const state = createTestState({
-        powerups: [
-          createTestPowerup({
-            id: 1,
-            position: { x: 5, y: 5 },
-          }),
-        ],
+        placeables: [existingPowerup],
       });
 
       const itemSystem = new ItemSystem();
       const result = itemSystem.generateWaveItems(state, 1);
 
-      // Check that existing powerup is preserved
+      // Check that existing powerup is preserved (converted to legacy format)
       const existingPreserved = result.powerups?.some(
         (p) => p.id === 1 && p.position.x === 5 && p.position.y === 5,
       );
@@ -253,7 +263,6 @@ describe('Item System Tests', () => {
             position: { x: 5, y: 5 },
           },
         ],
-        powerups: [],
       });
 
       const itemSystem = new ItemSystem();
@@ -269,10 +278,7 @@ describe('Item System Tests', () => {
 
   describe('Landmine generation', () => {
     it('should generate landmines on empty cells', () => {
-      const state = createTestState({
-        landmineIdCounter: 0,
-        landmines: [],
-      });
+      const state = createTestState({});
 
       const itemSystem = new ItemSystem();
       const result = itemSystem.generateWaveItems(state, 1);
@@ -292,10 +298,7 @@ describe('Item System Tests', () => {
     });
 
     it('should assign unique IDs to landmines', () => {
-      const state = createTestState({
-        landmineIdCounter: 20,
-        landmines: [],
-      });
+      const state = createTestState({});
 
       const itemSystem = new ItemSystem();
       const result = itemSystem.generateWaveItems(state, 1);
@@ -312,7 +315,6 @@ describe('Item System Tests', () => {
 
     it('should respect upgrade effects on landmine count', () => {
       const stateNoUpgrade = createTestState({
-        landmines: [],
         progress: {
           energy: 100,
           energyRecoveryRate: 1,
@@ -337,7 +339,6 @@ describe('Item System Tests', () => {
       });
 
       const stateWithUpgrade = createTestState({
-        landmines: [],
         progress: {
           energy: 100,
           energyRecoveryRate: 1,
@@ -376,7 +377,6 @@ describe('Item System Tests', () => {
 
     it('should respect upgrade effects on landmine damage', () => {
       const stateNoUpgrade = createTestState({
-        landmines: [],
         progress: {
           energy: 100,
           energyRecoveryRate: 1,
@@ -401,7 +401,6 @@ describe('Item System Tests', () => {
       });
 
       const stateWithUpgrade = createTestState({
-        landmines: [],
         progress: {
           energy: 100,
           energyRecoveryRate: 1,
@@ -441,26 +440,24 @@ describe('Item System Tests', () => {
     });
 
     it('should avoid cells occupied by existing items', () => {
+      const existingLandmine = createTestPlaceableTrap({
+        damage: 30,
+        id: 1,
+        positions: [{ x: 5, y: 5 }],
+        type: 'landmine',
+      });
+      const existingPowerup = createTestPlaceablePowerup({
+        id: 1,
+        positions: [{ x: 6, y: 6 }],
+      });
       const state = createTestState({
-        landmines: [
-          {
-            damage: 30,
-            id: 1,
-            position: { x: 5, y: 5 },
-          },
-        ],
-        powerups: [
-          createTestPowerup({
-            id: 1,
-            position: { x: 6, y: 6 },
-          }),
-        ],
+        placeables: [existingLandmine, existingPowerup],
       });
 
       const itemSystem = new ItemSystem();
       const result = itemSystem.generateWaveItems(state, 1);
 
-      // Existing landmine should be preserved
+      // Existing landmine should be preserved (converted to legacy format)
       const existingLandminePreserved = result.landmines?.some(
         (l) => l.id === 1 && l.position.x === 5 && l.position.y === 5,
       );
@@ -479,10 +476,7 @@ describe('Item System Tests', () => {
 
   describe('Combined generation', () => {
     it('should generate both powerups and landmines', () => {
-      const state = createTestState({
-        landmines: [],
-        powerups: [],
-      });
+      const state = createTestState({});
 
       const itemSystem = new ItemSystem();
       const result = itemSystem.generateWaveItems(state, 1);
@@ -492,10 +486,7 @@ describe('Item System Tests', () => {
     });
 
     it('should not place powerups and landmines in same cells', () => {
-      const state = createTestState({
-        landmines: [],
-        powerups: [],
-      });
+      const state = createTestState({});
 
       const itemSystem = new ItemSystem();
       const result = itemSystem.generateWaveItems(state, 1);
@@ -514,35 +505,64 @@ describe('Item System Tests', () => {
     });
 
     it('should preserve existing items when generating new ones', () => {
-      const existingPowerup = createTestPowerup({
+      const existingPowerup = createTestPlaceablePowerup({
         id: 1,
-        position: { x: 5, y: 5 },
+        positions: [{ x: 5, y: 5 }],
       });
 
-      const existingLandmine = {
+      const existingLandmine = createTestPlaceableTrap({
         damage: 30,
         id: 1,
-        position: { x: 6, y: 6 },
-      };
+        positions: [{ x: 6, y: 6 }],
+        type: 'landmine',
+      });
 
       const state = createTestState({
-        landmines: [existingLandmine],
-        powerups: [existingPowerup],
+        placeables: [existingLandmine, existingPowerup],
       });
 
       const itemSystem = new ItemSystem();
       const result = itemSystem.generateWaveItems(state, 1);
 
-      // Existing items should be preserved
-      expect(result.powerups).toContainEqual(existingPowerup);
-      expect(result.landmines).toContainEqual(existingLandmine);
+      // Existing items should be preserved (converted to legacy format)
+      const powerupPosition = existingPowerup.positions[0];
+      const landminePosition = existingLandmine.positions[0];
+
+      if (!powerupPosition || !landminePosition) {
+        throw new Error('Expected positions to exist');
+      }
+
+      const legacyPowerup = {
+        boost: existingPowerup.boost,
+        id: existingPowerup.id,
+        isTowerBound: existingPowerup.isTowerBound,
+        position: powerupPosition,
+        remainingWaves: existingPowerup.remainingWaves,
+      };
+      const legacyLandmine = {
+        damage: existingLandmine.damage,
+        id: existingLandmine.id,
+        position: landminePosition,
+      };
+      const resultPowerups =
+        result.placeables?.filter((p) => isPowerupItem(p)) ?? [];
+      const resultLandmines =
+        result.placeables?.filter(
+          (p) => isTrapItem(p) && p.type === 'landmine',
+        ) ?? [];
+      // Check if the converted placeables match the legacy format
+      const matchingPowerup = resultPowerups.find(
+        (p) => p.id === legacyPowerup.id,
+      );
+      const matchingLandmine = resultLandmines.find(
+        (l) => l.id === legacyLandmine.id,
+      );
+      expect(matchingPowerup).toBeDefined();
+      expect(matchingLandmine).toBeDefined();
     });
 
     it('should scale generation with count parameter', () => {
-      const state = createTestState({
-        landmines: [],
-        powerups: [],
-      });
+      const state = createTestState({});
 
       const itemSystem = new ItemSystem();
       const result1 = itemSystem.generateWaveItems(state, 1);
@@ -572,8 +592,6 @@ describe('Item System Tests', () => {
 
       const state = createTestState({
         grid,
-        landmines: [],
-        powerups: [],
       });
 
       const itemSystem = new ItemSystem();
@@ -599,8 +617,7 @@ describe('Item System Tests', () => {
                 return 'empty';
               }),
           ),
-        landmines: [],
-        powerups: [],
+
         startPositions: [{ x: 0, y: 6 }],
       });
 

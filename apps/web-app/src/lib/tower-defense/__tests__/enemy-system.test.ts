@@ -1,76 +1,9 @@
 import { describe, expect, it } from 'bun:test';
 import { EnemySystem } from '../engine/systems/enemy-system';
 import type { Enemy } from '../game-types';
-import type { GameState } from '../store/types';
+import { createTestState } from './test-helpers';
 
 describe('Enemy System Integration Tests', () => {
-  const createTestState = (overrides: Partial<GameState> = {}): GameState => ({
-    activeWavePowerUps: [],
-    autoAdvance: false,
-    combo: 0,
-    damageNumberIdCounter: 0,
-    damageNumbers: [],
-    enemyIdCounter: 1,
-    gameSpeed: 1,
-    gameStatus: 'playing',
-    goalPositions: [{ x: 11, y: 6 }],
-    grid: Array(12)
-      .fill(null)
-      .map(() => Array(12).fill('empty')),
-    isPaused: false,
-    isWaveActive: true,
-    landmineIdCounter: 0,
-    landmines: [],
-    lastKillTime: 0,
-    lives: 10,
-    money: 500,
-    obstacles: [],
-    particleIdCounter: 0,
-    particles: [],
-    pendingPowerUpSelection: false,
-    placeableIdCounter: 0,
-    placeables: [],
-    powerupIdCounter: 0,
-    powerups: [],
-    progress: {
-      energy: 100,
-      energyRecoveryRate: 1,
-      lastEnergyUpdate: Date.now(),
-      mapRatings: {},
-      maxEnergy: 100,
-      techPoints: 0,
-      upgrades: {
-        energyRecoveryRate: 0,
-        gridBugDamage: 0,
-        gridBugFrequency: 0,
-        landmineDamage: 0,
-        landmineFrequency: 0,
-        maxEnergy: 0,
-        powerNodeFrequency: 0,
-        powerNodePersistence: 0,
-        powerNodePotency: 0,
-        streamFrequency: 0,
-        streamLength: 0,
-      },
-    },
-    projectileIdCounter: 0,
-    projectiles: [],
-    score: 0,
-    selectedItem: null,
-    selectedTower: null,
-    selectedTowerType: null,
-    showDamageNumbers: true,
-    showGrid: false,
-    showPerformanceMonitor: false,
-    spawnedEnemies: [],
-    startPositions: [{ x: 0, y: 6 }],
-    towerIdCounter: 0,
-    towers: [],
-    unspawnedEnemies: [],
-    wave: 1,
-    ...overrides,
-  });
-
   const createTestEnemy = (overrides: Partial<Enemy> = {}): Enemy => ({
     health: 100,
     id: 1,

@@ -27,6 +27,7 @@ export default function EnemyRenderer({
 
   const color = getEnemyColor(enemy.type);
   const size = getEnemySize(enemy.type);
+  const healthPercent = enemy.health / enemy.maxHealth;
 
   return (
     <div
@@ -44,6 +45,7 @@ export default function EnemyRenderer({
           filter: `drop-shadow(0 0 ${isMobile ? '8px' : '15px'} ${color})`,
         }}
       >
+        {/* Outer border SVG - stroke only */}
         <svg
           aria-label={`${enemy.type} enemy`}
           className="w-full h-full animate-pulse"
@@ -52,14 +54,14 @@ export default function EnemyRenderer({
         >
           {enemy.type === 'boss' ? (
             <polygon
-              fill={color.replace('rgb', 'rgba').replace(')', ', 0.6)')}
+              fill="transparent"
               points="50,5 85,25 85,75 50,95 15,75 15,25"
               stroke={color}
               strokeWidth="5"
             />
           ) : enemy.type === 'tank' ? (
             <rect
-              fill={color.replace('rgb', 'rgba').replace(')', ', 0.6)')}
+              fill="transparent"
               height="80"
               stroke={color}
               strokeWidth="4"
@@ -69,27 +71,57 @@ export default function EnemyRenderer({
             />
           ) : enemy.type === 'fast' ? (
             <polygon
-              fill={color.replace('rgb', 'rgba').replace(')', ', 0.6)')}
+              fill="transparent"
               points="50,10 95,50 50,95 5,50"
               stroke={color}
               strokeWidth="3"
             />
           ) : (
             <polygon
-              fill={color.replace('rgb', 'rgba').replace(')', ', 0.6)')}
+              fill="transparent"
               points="50,10 90,90 10,90"
               stroke={color}
               strokeWidth="4"
             />
           )}
         </svg>
-      </div>
 
-      <div className="absolute -bottom-0.5 sm:-bottom-1 left-0 w-full h-0.5 sm:h-1 bg-gray-800 rounded-full overflow-hidden">
-        <div
-          className="h-full bg-green-400 transition-all"
-          style={{ width: `${(enemy.health / enemy.maxHealth) * 100}%` }}
-        />
+        {/* Inner fill SVG - scales down based on health */}
+        <svg
+          aria-label={`Enemy health indicator at ${Math.round(healthPercent * 100)}%`}
+          className="absolute inset-0 w-full h-full transition-all duration-300"
+          role="img"
+          style={{
+            transform: `scale(${healthPercent})`,
+            transformOrigin: 'center',
+          }}
+          viewBox="0 0 100 100"
+        >
+          {enemy.type === 'boss' ? (
+            <polygon
+              fill={color.replace('rgb', 'rgba').replace(')', ', 0.6)')}
+              points="50,5 85,25 85,75 50,95 15,75 15,25"
+            />
+          ) : enemy.type === 'tank' ? (
+            <rect
+              fill={color.replace('rgb', 'rgba').replace(')', ', 0.6)')}
+              height="80"
+              width="80"
+              x="10"
+              y="10"
+            />
+          ) : enemy.type === 'fast' ? (
+            <polygon
+              fill={color.replace('rgb', 'rgba').replace(')', ', 0.6)')}
+              points="50,10 95,50 50,95 5,50"
+            />
+          ) : (
+            <polygon
+              fill={color.replace('rgb', 'rgba').replace(')', ', 0.6)')}
+              points="50,10 90,90 10,90"
+            />
+          )}
+        </svg>
       </div>
     </div>
   );

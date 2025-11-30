@@ -2,7 +2,7 @@ import {
   createDefaultProgress,
   withProgressDefaults,
 } from '../constants/progress';
-import type { Enemy, PowerUp, Projectile, Tower } from '../game-types';
+import type { Enemy, PlaceableItem, Projectile, Tower } from '../game-types';
 import type { GameState } from '../store/types';
 
 /**
@@ -11,10 +11,14 @@ import type { GameState } from '../store/types';
 export function createTestState(overrides: Partial<GameState> = {}): GameState {
   const baseState: GameState = {
     activeWavePowerUps: [],
+    animatedPathLengths: [],
     autoAdvance: false,
+    availablePowerUps: [],
+    cellSize: 28,
     combo: 0,
     damageNumberIdCounter: 0,
     damageNumbers: [],
+    debugPaths: [],
     enemyIdCounter: 1,
     gameSpeed: 1,
     gameStatus: 'playing',
@@ -22,10 +26,9 @@ export function createTestState(overrides: Partial<GameState> = {}): GameState {
     grid: Array(12)
       .fill(null)
       .map(() => Array(12).fill('empty')),
+    isMobile: true,
     isPaused: false,
     isWaveActive: false,
-    landmineIdCounter: 0,
-    landmines: [],
     lastKillTime: 0,
     lives: 10,
     money: 500,
@@ -35,8 +38,6 @@ export function createTestState(overrides: Partial<GameState> = {}): GameState {
     pendingPowerUpSelection: false,
     placeableIdCounter: 0,
     placeables: [],
-    powerupIdCounter: 0,
-    powerups: [],
     progress: createDefaultProgress(),
     projectileIdCounter: 0,
     projectiles: [],
@@ -44,14 +45,19 @@ export function createTestState(overrides: Partial<GameState> = {}): GameState {
     selectedItem: null,
     selectedTower: null,
     selectedTowerType: null,
+    showActivePowerUps: false,
     showDamageNumbers: true,
     showGrid: false,
     showPerformanceMonitor: false,
+    showSettings: false,
+    showUI: false,
+    showWaveInfo: false,
     spawnedEnemies: [],
     startPositions: [{ x: 0, y: 6 }],
     towerIdCounter: 0,
     towers: [],
     unspawnedEnemies: [],
+    wasPausedBeforeWaveInfo: false,
     wave: 0,
   };
 
@@ -122,23 +128,68 @@ export function createTestTower(overrides: Partial<Tower> = {}): Tower {
 export function createTestProjectile(
   overrides: Partial<Projectile> = {},
 ): Projectile {
+  const defaultTarget = overrides.target ?? { x: 2, y: 6 };
+  const defaultSource = overrides.sourcePosition ?? { x: 2, y: 5 };
+  const dx = defaultTarget.x - defaultSource.x;
+  const dy = defaultTarget.y - defaultSource.y;
+  const distance = Math.sqrt(dx * dx + dy * dy);
+  const direction =
+    distance > 0 ? { x: dx / distance, y: dy / distance } : { x: 0, y: 0 };
+
   return {
+    direction,
+    hitEnemyIds: new Set<number>(),
     id: 1,
+    penetrationRemaining: 0,
     position: { x: 2, y: 5 },
-    sourcePosition: { x: 2, y: 5 },
-    target: { x: 2, y: 6 },
+    sourcePosition: defaultSource,
+    target: defaultTarget,
     type: 'basic',
     ...overrides,
   };
 }
 
-export function createTestPowerup(overrides: Partial<PowerUp> = {}): PowerUp {
+// Legacy function - DEPRECATED, use createTestPlaceablePowerup instead
+/**
+ * @deprecated Use createTestPlaceablePowerup instead
+ */
+export function createTestPowerup(
+  overrides: Partial<PlaceableItem & { category: 'powerup' }> = {},
+): PlaceableItem & { category: 'powerup' } {
+  return createTestPlaceablePowerup(overrides);
+}
+
+/**
+ * Create a test placeable powerup item
+ */
+export function createTestPlaceablePowerup(
+  overrides: Partial<PlaceableItem & { category: 'powerup' }> = {},
+): PlaceableItem & { category: 'powerup' } {
   return {
     boost: 1.5,
+    category: 'powerup',
     id: 1,
     isTowerBound: false,
-    position: { x: 5, y: 5 },
+    positions: [{ x: 5, y: 5 }],
+    rarity: 'common',
     remainingWaves: 3,
+    type: 'powerNode',
+    ...overrides,
+  };
+}
+
+/**
+ * Create a test placeable trap item (landmine)
+ */
+export function createTestPlaceableTrap(
+  overrides: Partial<PlaceableItem & { category: 'trap' }> = {},
+): PlaceableItem & { category: 'trap' } {
+  return {
+    category: 'trap',
+    damage: 100,
+    id: 1,
+    positions: [{ x: 5, y: 5 }],
+    type: 'landmine',
     ...overrides,
   };
 }

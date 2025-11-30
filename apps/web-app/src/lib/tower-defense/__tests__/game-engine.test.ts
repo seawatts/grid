@@ -1,12 +1,13 @@
 import { beforeAll, describe, expect, it } from 'bun:test';
 import { MAX_WAVES } from '../constants/balance';
 import { GameEngine } from '../engine/game-engine';
-import type { Landmine, PowerUp } from '../game-types';
+import type { PlaceableItem } from '../game-types';
 import type { SystemUpdateResult } from '../store/types';
 import {
   advanceUntilCondition,
   createTestEnemy,
-  createTestPowerup,
+  createTestPlaceablePowerup,
+  createTestPlaceableTrap,
   createTestState,
   createTestTower,
 } from './test-helpers';
@@ -241,8 +242,6 @@ describe('Game Engine Integration Tests', () => {
       const state = createTestState({
         goalPositions: [{ x: 11, y: 6 }],
         isWaveActive: false,
-        landmines: [],
-        powerups: [],
         startPositions: [{ x: 0, y: 6 }],
         wave: 0,
       });
@@ -250,8 +249,7 @@ describe('Game Engine Integration Tests', () => {
       const result = engine.startWave(state);
 
       // Should generate items
-      expect(result.powerups || []).toBeDefined();
-      expect(result.landmines || []).toBeDefined();
+      expect(result.placeables || []).toBeDefined();
     });
   });
 
@@ -521,33 +519,24 @@ describe('Game Engine Integration Tests', () => {
       const onUpdate = () => {};
       const engine = new GameEngine(onUpdate);
 
-      const state = createTestState({
-        landmines: [],
-        powerups: [],
-      });
+      const state = createTestState({});
 
       const result = engine.generateItems(state, 1);
 
-      expect(result.powerups || []).toBeDefined();
-      expect(result.landmines || []).toBeDefined();
+      expect(result.placeables || []).toBeDefined();
     });
 
     it('should scale item generation with count', () => {
       const onUpdate = () => {};
       const engine = new GameEngine(onUpdate);
 
-      const state = createTestState({
-        landmines: [],
-        powerups: [],
-      });
+      const state = createTestState({});
 
       const result1 = engine.generateItems(state, 1);
       const result2 = engine.generateItems(state, 2);
 
-      const total1 =
-        (result1.powerups?.length || 0) + (result1.landmines?.length || 0);
-      const total2 =
-        (result2.powerups?.length || 0) + (result2.landmines?.length || 0);
+      const total1 = result1.placeables?.length || 0;
+      const total2 = result2.placeables?.length || 0;
 
       expect(total2).toBeGreaterThanOrEqual(total1);
     });
@@ -556,28 +545,28 @@ describe('Game Engine Integration Tests', () => {
       const onUpdate = () => {};
       const engine = new GameEngine(onUpdate);
 
-      const existingPowerup: PowerUp = createTestPowerup({
+      const existingPowerup = createTestPlaceablePowerup({
         boost: 1,
         id: 3,
-        position: { x: 1, y: 1 },
+        positions: [{ x: 1, y: 1 }],
       });
-      const existingLandmine: Landmine = {
+      const existingTrap = createTestPlaceableTrap({
         damage: 25,
         id: 4,
-        position: { x: 2, y: 2 },
-      };
+        positions: [{ x: 2, y: 2 }],
+      });
 
       const state = createTestState({
-        landmines: [existingLandmine],
-        powerups: [existingPowerup],
+        placeableIdCounter: 5,
+        placeables: [existingPowerup, existingTrap],
       });
 
       const result = engine.generateItems(state, 1, true);
 
-      expect(result.powerups?.some((p) => p.id === existingPowerup.id)).toBe(
+      expect(result.placeables?.some((p) => p.id === existingPowerup.id)).toBe(
         false,
       );
-      expect(result.landmines?.some((l) => l.id === existingLandmine.id)).toBe(
+      expect(result.placeables?.some((p) => p.id === existingTrap.id)).toBe(
         false,
       );
     });
@@ -591,23 +580,26 @@ describe('Game Engine Integration Tests', () => {
       const engine = new GameEngine(onUpdate);
       engine.start();
 
-      const existingPowerup: PowerUp = createTestPowerup({
+      // Create a non-expired powerup that should be preserved
+      const existingPowerup = createTestPlaceablePowerup({
         boost: 1,
         id: 5,
-        position: { x: 2, y: 2 },
+        positions: [{ x: 2, y: 2 }],
+        remainingWaves: 2, // Not expired
       });
-      const existingLandmine: Landmine = {
-        damage: 25,
+      // Create a persistent trap (gridBug) that should be preserved
+      const existingTrap: PlaceableItem = {
+        category: 'trap',
+        damage: 50,
         id: 7,
-        position: { x: 3, y: 3 },
+        positions: [{ x: 3, y: 3 }],
+        type: 'gridBug', // Persistent trap
       };
 
       const state = createTestState({
         isWaveActive: true,
-        landmineIdCounter: 8,
-        landmines: [existingLandmine],
-        powerupIdCounter: 6,
-        powerups: [existingPowerup],
+        placeableIdCounter: 8,
+        placeables: [existingPowerup, existingTrap],
         spawnedEnemies: [],
         unspawnedEnemies: [],
       });
@@ -625,10 +617,12 @@ describe('Game Engine Integration Tests', () => {
         throw new Error('Expected system update payload');
       }
       expect(update.isWaveActive).toBe(false);
-      expect(update.powerups?.some((p) => p.id === existingPowerup.id)).toBe(
+      // Non-expired powerup should be preserved
+      expect(update.placeables?.some((p) => p.id === existingPowerup.id)).toBe(
         true,
       );
-      expect(update.landmines?.some((l) => l.id === existingLandmine.id)).toBe(
+      // Persistent trap should be preserved
+      expect(update.placeables?.some((p) => p.id === existingTrap.id)).toBe(
         true,
       );
     });
@@ -639,20 +633,25 @@ describe('Game Engine Integration Tests', () => {
       const onUpdate = () => {};
       const engine = new GameEngine(onUpdate);
 
+      const expiredPowerup = createTestPlaceablePowerup({
+        id: 1,
+        positions: [{ x: 1, y: 1 }],
+        remainingWaves: 1,
+      });
+
       const state = createTestState({
         isWaveActive: false,
-        powerups: [
-          createTestPowerup({
-            id: 1,
-            remainingWaves: 1,
-          }),
-        ],
+        placeableIdCounter: 2,
+        placeables: [expiredPowerup],
         towers: [],
       });
 
       const result = engine.startWave(state);
-      expect(result.powerups).toBeDefined();
-      expect(result.powerups?.length).toBe(0);
+      expect(result.placeables).toBeDefined();
+      // Expired powerup should be removed
+      expect(result.placeables?.some((p) => p.id === expiredPowerup.id)).toBe(
+        false,
+      );
     });
 
     it('should preserve powerups that have towers on them', () => {
@@ -660,15 +659,16 @@ describe('Game Engine Integration Tests', () => {
       const engine = new GameEngine(onUpdate);
 
       const boundPosition = { x: 2, y: 5 };
+      const boundPowerup = createTestPlaceablePowerup({
+        id: 2,
+        positions: [boundPosition],
+        remainingWaves: 1,
+      });
+
       const state = createTestState({
         isWaveActive: false,
-        powerups: [
-          createTestPowerup({
-            id: 2,
-            position: boundPosition,
-            remainingWaves: 1,
-          }),
-        ],
+        placeableIdCounter: 3,
+        placeables: [boundPowerup],
         towers: [
           createTestTower({
             position: boundPosition,
@@ -677,10 +677,15 @@ describe('Game Engine Integration Tests', () => {
       });
 
       const result = engine.startWave(state);
-      expect(result.powerups).toBeDefined();
-      expect(result.powerups?.length).toBe(1);
-      expect(result.powerups?.[0]?.isTowerBound).toBe(true);
-      expect(result.powerups?.[0]?.remainingWaves).toBe(1);
+      expect(result.placeables).toBeDefined();
+      const preservedPowerup = result.placeables?.find(
+        (p) => p.id === boundPowerup.id,
+      );
+      expect(preservedPowerup).toBeDefined();
+      if (preservedPowerup && preservedPowerup.category === 'powerup') {
+        expect(preservedPowerup.isTowerBound).toBe(true);
+        expect(preservedPowerup.remainingWaves).toBe(1);
+      }
     });
   });
 });

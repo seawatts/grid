@@ -5,38 +5,58 @@ import type {
   SystemUpdateResult,
 } from '../../store/types';
 
+// Projectile speed in units per frame (approximately 0.3 per frame = fast movement)
+const PROJECTILE_SPEED = 0.3;
+// Max distance a projectile can travel before being removed
+const MAX_PROJECTILE_DISTANCE = 20;
+
 export class ProjectileSystem implements GameSystem {
   update(
     state: GameState,
     _deltaTime: number,
     _timestamp: number,
   ): SystemUpdateResult {
-    const { projectiles, spawnedEnemies } = state;
+    const { projectiles } = state;
 
-    const enemiesById = new Map(
-      spawnedEnemies.map((enemy) => [enemy.id, enemy]),
-    );
+    const updatedProjectiles: Projectile[] = [];
+    const removedProjectileIds = new Set<number>();
 
-    const updatedProjectiles = projectiles.map((projectile): Projectile => {
-      const trackedEnemy =
-        projectile.targetEnemyId !== undefined
-          ? enemiesById.get(projectile.targetEnemyId)
-          : undefined;
-      const targetPosition = trackedEnemy?.position ?? projectile.target;
+    for (const projectile of projectiles) {
+      // Calculate distance from source
+      const distanceTraveled = Math.sqrt(
+        (projectile.position.x - projectile.sourcePosition.x) ** 2 +
+          (projectile.position.y - projectile.sourcePosition.y) ** 2,
+      );
 
-      return {
-        ...projectile,
-        position: {
-          x:
-            projectile.position.x +
-            (targetPosition.x - projectile.position.x) * 0.3,
-          y:
-            projectile.position.y +
-            (targetPosition.y - projectile.position.y) * 0.3,
-        },
-        target: trackedEnemy ? { ...trackedEnemy.position } : projectile.target,
+      // Remove projectiles that have traveled too far
+      if (distanceTraveled > MAX_PROJECTILE_DISTANCE) {
+        removedProjectileIds.add(projectile.id);
+        continue;
+      }
+
+      // Move projectile in straight line using direction vector
+      const newPosition = {
+        x: projectile.position.x + projectile.direction.x * PROJECTILE_SPEED,
+        y: projectile.position.y + projectile.direction.y * PROJECTILE_SPEED,
       };
-    });
+
+      // Check if projectile is out of reasonable bounds (assuming grid is roughly 0-20 in both axes)
+      // This is a safety check - collision system will handle actual removal
+      if (
+        newPosition.x < -5 ||
+        newPosition.x > 25 ||
+        newPosition.y < -5 ||
+        newPosition.y > 25
+      ) {
+        removedProjectileIds.add(projectile.id);
+        continue;
+      }
+
+      updatedProjectiles.push({
+        ...projectile,
+        position: newPosition,
+      });
+    }
 
     return {
       projectiles: updatedProjectiles,

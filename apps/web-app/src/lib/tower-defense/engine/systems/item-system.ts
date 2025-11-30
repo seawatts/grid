@@ -41,10 +41,9 @@ export class ItemSystem implements GameSystem {
     count = 1,
     clearExisting = false,
   ): SystemUpdateResult {
-    const { grid, progress } = state;
-    const gridSize = grid.length;
+    const { grid, progress, gridWidth, gridHeight } = state;
 
-    // Keep persistent placeables if not clearing
+    // Keep existing placeables if not clearing
     const existingPlaceables = clearExisting
       ? []
       : state.placeables.filter((item) => {
@@ -52,16 +51,19 @@ export class ItemSystem implements GameSystem {
             const config = TRAP_CONFIGS[item.type as TrapType];
             return config.behavior.persistent;
           }
-          // Powerups are handled separately with lifetime
+          // Preserve powerups that haven't expired (remainingWaves > 0 or isTowerBound)
+          if (item.category === 'powerup') {
+            return item.isTowerBound || (item.remainingWaves ?? 0) > 0;
+          }
           return false;
         });
 
     // Find empty cells
     const emptyCells: Position[] = [];
-    for (let y = 0; y < gridSize; y++) {
+    for (let y = 0; y < gridHeight; y++) {
       const row = grid[y];
       if (!row) continue;
-      for (let x = 0; x < gridSize; x++) {
+      for (let x = 0; x < gridWidth; x++) {
         if (row[x] === 'empty') {
           // Check if occupied by existing placeables
           const isOccupied = existingPlaceables.some((item) =>
@@ -189,7 +191,9 @@ export class ItemSystem implements GameSystem {
   }
 
   /**
-   * Generate items for a new wave (legacy method for backward compatibility)
+   * Generate items for a new wave (legacy method - DEPRECATED, use generatePlaceables instead)
+   * Kept only for test compatibility
+   * @deprecated Use generatePlaceables instead
    * @param state - Current game state
    * @param count - Multiplier for item count
    * @param clearExisting - If true, clears existing items before generating new ones
@@ -199,15 +203,45 @@ export class ItemSystem implements GameSystem {
     count = 1,
     clearExisting = false,
   ): SystemUpdateResult {
-    const { grid, progress } = state;
+    const { grid, progress, placeables } = state;
     const powerupLifetime = getPowerupLifetime(state.progress);
-    const powerups = clearExisting
+
+    // Convert placeables back to legacy format for backward compatibility with tests
+    const powerups: PowerUp[] = clearExisting
       ? []
-      : state.powerups.map((powerup) =>
-          ensurePowerupFields(powerup, powerupLifetime),
-        );
-    const landmines = clearExisting ? [] : state.landmines;
-    const gridSize = grid.length;
+      : (placeables ?? [])
+          .filter((p) => p.category === 'powerup')
+          .map((p) => {
+            if (p.category === 'powerup') {
+              return {
+                boost: p.boost,
+                id: p.id,
+                isTowerBound: p.isTowerBound,
+                position: p.positions[0] ?? { x: 0, y: 0 },
+                remainingWaves: p.remainingWaves,
+              };
+            }
+            return null;
+          })
+          .filter((p): p is PowerUp => p !== null)
+          .map((powerup) => ensurePowerupFields(powerup, powerupLifetime));
+
+    const landmines: Landmine[] = clearExisting
+      ? []
+      : (placeables ?? [])
+          .filter((p) => p.category === 'trap' && p.type === 'landmine')
+          .map((p) => {
+            if (p.category === 'trap') {
+              return {
+                damage: p.damage,
+                id: p.id,
+                position: p.positions[0] ?? { x: 0, y: 0 },
+              };
+            }
+            return null;
+          })
+          .filter((l): l is Landmine => l !== null);
+    const { gridWidth, gridHeight } = state;
 
     const powerupBoost =
       UPGRADES.powerNodePotency?.effects[progress.upgrades.powerNodePotency] ??
@@ -225,10 +259,10 @@ export class ItemSystem implements GameSystem {
 
     // Find empty cells
     const emptyCells: Position[] = [];
-    for (let y = 0; y < gridSize; y++) {
+    for (let y = 0; y < gridHeight; y++) {
       const row = grid[y];
       if (!row) continue;
-      for (let x = 0; x < gridSize; x++) {
+      for (let x = 0; x < gridWidth; x++) {
         if (row[x] === 'empty') {
           // Check if occupied by existing items
           const isOccupied =
@@ -251,7 +285,7 @@ export class ItemSystem implements GameSystem {
       if (!pos) continue;
       newPowerups.push({
         boost: powerupBoost,
-        id: state.powerupIdCounter + i,
+        id: state.placeableIdCounter + i,
         isTowerBound: false,
         position: pos,
         remainingWaves: powerupLifetime,
@@ -267,16 +301,43 @@ export class ItemSystem implements GameSystem {
       if (!pos) continue;
       newLandmines.push({
         damage: landmineDmg,
-        id: state.landmineIdCounter + i,
+        id: state.placeableIdCounter + powerupCount + i,
         position: pos,
       });
     }
 
+    // Convert legacy powerups and landmines to placeables for backward compatibility
+    const convertedPlaceables: PlaceableItem[] = [];
+    let placeableIdCounter = state.placeableIdCounter;
+
+    // Convert powerups
+    for (const powerup of [...powerups, ...newPowerups]) {
+      convertedPlaceables.push({
+        boost: powerup.boost,
+        category: 'powerup',
+        id: placeableIdCounter++,
+        isTowerBound: powerup.isTowerBound,
+        positions: [{ x: powerup.position.x, y: powerup.position.y }],
+        rarity: 'common',
+        remainingWaves: powerup.remainingWaves,
+        type: 'powerNode',
+      });
+    }
+
+    // Convert landmines
+    for (const landmine of [...landmines, ...newLandmines]) {
+      convertedPlaceables.push({
+        category: 'trap',
+        damage: landmine.damage,
+        id: placeableIdCounter++,
+        positions: [{ x: landmine.position.x, y: landmine.position.y }],
+        type: 'landmine',
+      });
+    }
+
     return {
-      landmineIdCounter: state.landmineIdCounter + newLandmines.length,
-      landmines: [...landmines, ...newLandmines],
-      powerupIdCounter: state.powerupIdCounter + newPowerups.length,
-      powerups: [...powerups, ...newPowerups],
+      placeableIdCounter,
+      placeables: convertedPlaceables,
     };
   }
 }

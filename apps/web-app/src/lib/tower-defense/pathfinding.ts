@@ -5,7 +5,8 @@ export function findPath(
   start: Position,
   goals: Position[],
   towerPositions: Position[],
-  gridSize: number,
+  gridWidth: number,
+  gridHeight: number,
 ): Position[] | null {
   const isTower = (x: number, y: number) =>
     towerPositions.some((t) => t.x === x && t.y === y);
@@ -14,7 +15,7 @@ export function findPath(
     goals.some((g) => g.x === x && g.y === y);
 
   const isValid = (x: number, y: number) => {
-    if (x < 0 || x >= gridSize || y < 0 || y >= gridSize) return false;
+    if (x < 0 || x >= gridWidth || y < 0 || y >= gridHeight) return false;
     if (isGoal(x, y)) return true;
     if (x === start.x && y === start.y) return true;
     return !isTower(x, y);
@@ -40,7 +41,7 @@ export function findPath(
   fScore.set(key(start), heuristic(start));
 
   let iterations = 0;
-  const maxIterations = gridSize * gridSize * 2;
+  const maxIterations = gridWidth * gridHeight * 2;
 
   while (openSet.length > 0 && iterations < maxIterations) {
     iterations++;
@@ -129,7 +130,8 @@ export function findPathsForMultipleStartsAndGoals(
   starts: Position[],
   goals: Position[],
   towerPositions: Position[],
-  gridSize: number,
+  gridWidth: number,
+  gridHeight: number,
   placeables?: PlaceableItem[],
 ): (Position[] | null)[] {
   const allBlockedPositions = combineBlockedPositions(
@@ -140,13 +142,15 @@ export function findPathsForMultipleStartsAndGoals(
   // If only one goal, just return paths from each start to that goal
   if (goals.length === 1) {
     return starts.map((start) =>
-      findPath(start, goals, allBlockedPositions, gridSize),
+      findPath(start, goals, allBlockedPositions, gridWidth, gridHeight),
     );
   }
 
   // Calculate all possible paths from each start to each goal
   const pathMatrix: (Position[] | null)[][] = starts.map((start) =>
-    goals.map((goal) => findPath(start, [goal], allBlockedPositions, gridSize)),
+    goals.map((goal) =>
+      findPath(start, [goal], allBlockedPositions, gridWidth, gridHeight),
+    ),
   );
 
   // Track which goals have been assigned

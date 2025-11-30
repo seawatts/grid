@@ -14,9 +14,7 @@ import {
   getRarityName,
 } from '~/lib/tower-defense/constants/rarity';
 import type {
-  Landmine,
   PlaceableItem,
-  PowerUp,
   PowerupRarity,
 } from '~/lib/tower-defense/game-types';
 import { isPowerupItem, isTrapItem } from '~/lib/tower-defense/game-types';
@@ -24,7 +22,7 @@ import { useGameStore } from '~/lib/tower-defense/store/game-store';
 import { aggregateWavePowerUpEffects } from '~/lib/tower-defense/utils/calculations';
 
 interface ItemDetailsProps {
-  item: PlaceableItem | PowerUp | Landmine;
+  item: PlaceableItem;
   onClose: () => void;
 }
 
@@ -32,13 +30,9 @@ export default function ItemDetails({ item, onClose }: ItemDetailsProps) {
   const { activeWavePowerUps } = useGameStore();
 
   // Check if it's a placeable item (unified system)
-  const isPlaceable = 'category' in item;
-  const isPlaceablePowerup = isPlaceable && isPowerupItem(item);
-  const isPlaceableTrap = isPlaceable && isTrapItem(item);
-
-  // Legacy item checks
-  const isLegacyPowerUp = !isPlaceable && 'boost' in item;
-  const isPowerUp = isPlaceablePowerup || isLegacyPowerUp;
+  const isPlaceablePowerup = isPowerupItem(item);
+  const isPlaceableTrap = isTrapItem(item);
+  const isPowerUp = isPlaceablePowerup;
 
   // Get item data
   let boost: number | undefined;
@@ -49,44 +43,25 @@ export default function ItemDetails({ item, onClose }: ItemDetailsProps) {
   let itemName = 'Unknown';
   let itemDescription = '';
 
-  if (isPlaceable) {
-    if (isPlaceablePowerup) {
-      const config = POWERUP_CONFIGS[item.type as keyof typeof POWERUP_CONFIGS];
-      boost = item.boost;
-      remainingWaves = item.remainingWaves;
-      isTowerBound = item.isTowerBound;
-      rarity = item.rarity;
-      itemName = config?.name ?? 'Power Node';
-      itemDescription =
-        'Energy concentration detected. Towers placed on this node receive a significant damage output boost.';
-    } else if (isPlaceableTrap) {
-      const config = TRAP_CONFIGS[item.type as keyof typeof TRAP_CONFIGS];
-      damage = item.damage;
-      itemName = config?.name ?? 'Trap';
-      itemDescription = config?.behavior.persistent
-        ? 'Persistent trap that damages enemies as they pass over it.'
-        : 'Volatile explosive device. Detonates when enemies enter proximity. Single use only.';
-    } else {
-      itemName = 'Unknown';
-      itemDescription = '';
-    }
+  if (isPlaceablePowerup) {
+    const config = POWERUP_CONFIGS[item.type as keyof typeof POWERUP_CONFIGS];
+    boost = item.boost;
+    remainingWaves = item.remainingWaves;
+    isTowerBound = item.isTowerBound;
+    rarity = item.rarity;
+    itemName = config?.name ?? 'Node';
+    itemDescription =
+      'Energy concentration detected. Towers placed on this node receive a significant damage output boost.';
+  } else if (isPlaceableTrap) {
+    const config = TRAP_CONFIGS[item.type as keyof typeof TRAP_CONFIGS];
+    damage = item.damage;
+    itemName = config?.name ?? 'Trap';
+    itemDescription = config?.behavior.persistent
+      ? 'Persistent trap that damages enemies as they pass over it.'
+      : 'Volatile explosive device. Detonates when enemies enter proximity. Single use only.';
   } else {
-    // Legacy item
-    if (isLegacyPowerUp) {
-      boost = item.boost;
-      remainingWaves =
-        'remainingWaves' in item ? item.remainingWaves : undefined;
-      isTowerBound = 'isTowerBound' in item ? item.isTowerBound : undefined;
-      itemName = 'POWER NODE';
-      itemDescription =
-        'Energy concentration detected. Towers placed on this node receive a significant damage output boost.';
-    } else if ('damage' in item) {
-      // Legacy landmine
-      damage = item.damage;
-      itemName = 'PROXIMITY MINE';
-      itemDescription =
-        'Volatile explosive device. Detonates when enemies enter proximity. Single use only.';
-    }
+    itemName = 'Unknown';
+    itemDescription = '';
   }
 
   const waveCount = remainingWaves

@@ -3,43 +3,43 @@ import type { RunUpgrade, UpgradeConfig } from '../game-types';
 export const UPGRADES: Record<string, UpgradeConfig> = {
   energyRecoveryRate: {
     costs: [5, 10, 15, 20],
-    description: 'Increases energy recovery rate per hour.',
-    effects: [1, 1.5, 2, 2.5, 3], // Base, Lvl 1, Lvl 2, Lvl 3, Lvl 4 (energy per hour)
+    description: 'Increases energy recovery rate per minute.',
+    effects: [1, 1.5, 2, 2.5, 3], // Base, Lvl 1, Lvl 2, Lvl 3, Lvl 4 (energy per minute)
     id: 'energyRecoveryRate',
     maxLevel: 4,
     name: 'Energy Recovery Rate',
   },
   gridBugDamage: {
     costs: [2, 4, 8],
-    description: 'Increases the damage dealt by Grid Bugs.',
+    description: 'Increases the damage dealt by Glitches.',
     effects: [50, 75, 100, 150], // Base, Lvl 1, Lvl 2, Lvl 3
     id: 'gridBugDamage',
     maxLevel: 3,
-    name: 'Grid Bug Damage',
+    name: 'Glitch Damage',
   },
   gridBugFrequency: {
     costs: [2, 4, 8],
-    description: 'Increases the number of Grid Bugs that appear.',
+    description: 'Increases the number of Glitches that appear.',
     effects: [1, 1.5, 2, 3], // Base, Lvl 1, Lvl 2, Lvl 3
     id: 'gridBugFrequency',
     maxLevel: 3,
-    name: 'Grid Bug Frequency',
+    name: 'Glitch Frequency',
   },
   landmineDamage: {
     costs: [2, 4, 8],
-    description: 'Increases the damage dealt by landmines.',
+    description: 'Increases the damage dealt by Traps.',
     effects: [100, 150, 225, 350], // Base, Lvl 1, Lvl 2, Lvl 3
     id: 'landmineDamage',
     maxLevel: 3,
-    name: 'Landmine Damage',
+    name: 'Trap Damage',
   },
   landmineFrequency: {
     costs: [2, 4, 8],
-    description: 'Increases the number of landmines that appear.',
+    description: 'Increases the number of Traps that appear.',
     effects: [1, 1.5, 2, 3], // Base, Lvl 1, Lvl 2, Lvl 3
     id: 'landmineFrequency',
     maxLevel: 3,
-    name: 'Landmine Frequency',
+    name: 'Trap Frequency',
   },
   maxEnergy: {
     costs: [10, 20, 30],
@@ -51,27 +51,27 @@ export const UPGRADES: Record<string, UpgradeConfig> = {
   },
   powerNodeFrequency: {
     costs: [2, 4, 8],
-    description: 'Increases the number of power nodes that appear.',
+    description: 'Increases the number of Nodes that appear.',
     effects: [1, 1.5, 2, 3], // Base, Lvl 1, Lvl 2, Lvl 3
     id: 'powerNodeFrequency',
     maxLevel: 3,
-    name: 'Power Node Frequency',
+    name: 'Node Frequency',
   },
   powerNodePersistence: {
     costs: [3, 6, 9, 12],
-    description: 'Extends how many waves power nodes persist without towers.',
+    description: 'Extends how many waves Nodes persist without towers.',
     effects: [3, 4, 5, 6, 7], // Base + four upgrade levels
     id: 'powerNodePersistence',
     maxLevel: 4,
-    name: 'Power Node Persistence',
+    name: 'Node Persistence',
   },
   powerNodePotency: {
     costs: [2, 4, 8],
-    description: 'Increases the damage boost provided by power nodes.',
+    description: 'Increases the damage boost provided by Nodes.',
     effects: [1.5, 1.75, 2.0, 2.5], // Base, Lvl 1, Lvl 2, Lvl 3
     id: 'powerNodePotency',
     maxLevel: 3,
-    name: 'Power Node Potency',
+    name: 'Node Potency',
   },
   streamFrequency: {
     costs: [2, 4, 8],
@@ -97,7 +97,7 @@ export const RUN_UPGRADES: RunUpgrade[] = [
     effect: { type: 'startMoney', value: 100 },
     icon: 'money',
     id: 'wealth',
-    name: 'Initial Funding',
+    name: 'Init',
   },
   {
     description: 'Start the mission with +10 Lives.',
@@ -111,20 +111,20 @@ export const RUN_UPGRADES: RunUpgrade[] = [
     effect: { type: 'damageMult', value: 0.15 },
     icon: 'damage',
     id: 'power',
-    name: 'Overcharged Systems',
+    name: 'Overclock',
   },
   {
     description: 'All towers fire 15% faster.',
     effect: { type: 'fireRateMult', value: 0.15 },
     icon: 'speed',
     id: 'speed',
-    name: 'Rapid Response',
+    name: 'Turbo',
   },
   {
     description: 'Enemies drop 20% more credits.',
     effect: { type: 'rewardMult', value: 0.2 },
     icon: 'reward',
     id: 'reward',
-    name: 'Bounty Hunter',
+    name: 'Hash',
   },
 ] as const;

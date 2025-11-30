@@ -17,4 +17,4 @@ export const PARTICLE_COUNT_LANDMINE = 12;
 
 // Cell size constraints
 export const MIN_CELL_SIZE = 22;
-export const MAX_CELL_SIZE = 50;
+export const MAX_CELL_SIZE = 80; // Increased for mobile to allow larger, more touchable cells (60-80px target)

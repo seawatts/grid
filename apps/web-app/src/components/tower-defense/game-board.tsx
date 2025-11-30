@@ -1,15 +1,12 @@
 'use client';
 
 import { Button } from '@seawatts/ui/button';
-import { GRID_SIZE, MAX_WAVES } from '~/lib/tower-defense/constants/balance';
 import type {
   DamageNumber,
   Enemy,
-  Landmine,
   Particle,
   PlaceableItem,
   Position,
-  PowerUp,
   Projectile,
   Tower,
 } from '~/lib/tower-defense/game-types';
@@ -28,9 +25,6 @@ interface GameBoardProps {
   particles: Particle[];
   damageNumbers: DamageNumber[];
   placeables?: PlaceableItem[];
-  // Legacy props (kept for backward compatibility)
-  powerups: PowerUp[];
-  landmines: Landmine[];
   debugPaths: Position[][];
   animatedPathLengths: number[];
   touchFeedback: Position | null;
@@ -41,6 +35,7 @@ interface GameBoardProps {
   goalPositions: Position[];
   selectedTower: Tower | null;
   showDamageNumbers: boolean;
+  maxWaves: number;
   onCellClick: (x: number, y: number) => void;
 }
 
@@ -52,8 +47,6 @@ export default function GameBoard({
   particles,
   damageNumbers,
   placeables = [],
-  powerups,
-  landmines,
   debugPaths,
   animatedPathLengths,
   touchFeedback,
@@ -62,8 +55,15 @@ export default function GameBoard({
   gameStatus,
   selectedTower,
   showDamageNumbers,
+  maxWaves,
   onCellClick,
 }: GameBoardProps) {
+  // Calculate grid dimensions from the grid array
+  const gridHeight = grid.length;
+  const gridWidth = grid[0]?.length || 0;
+  const boardWidth = gridWidth * cellSize;
+  const boardHeight = gridHeight * cellSize;
+
   return (
     <div
       className="relative bg-black select-none"
@@ -72,10 +72,9 @@ export default function GameBoard({
         borderImage:
           'linear-gradient(135deg, rgb(6, 182, 212), rgb(168, 85, 247), rgb(236, 72, 153)) 1',
         boxShadow: '0 0 30px rgba(6, 182, 212, 0.3)',
-        height: GRID_SIZE * cellSize,
-        maxHeight: '100vh',
-        maxWidth: '100vw',
-        width: GRID_SIZE * cellSize,
+        flexShrink: 0,
+        height: boardHeight,
+        width: boardWidth,
       }}
     >
       {/* Grid pattern */}
@@ -117,17 +116,10 @@ export default function GameBoard({
             item.positions.some((pos) => pos.x === x && pos.y === y),
           );
 
-          // Legacy item lookup (for backward compatibility)
-          const powerup = powerups.find(
-            (p) => p.position.x === x && p.position.y === y,
-          );
-          const landmine = landmines.find(
-            (m) => m.position.x === x && m.position.y === y,
-          );
           const hasTower = towers.some(
             (t) => t.position.x === x && t.position.y === y,
           );
-          const cellId = `${cell}-${y * grid.length + x}`;
+          const cellId = `${cell}-${y * gridWidth + x}`;
 
           return (
             <GridCell
@@ -137,10 +129,8 @@ export default function GameBoard({
               debugPaths={debugPaths}
               hasTower={hasTower}
               key={cellId}
-              landmine={landmine}
               onClick={onCellClick}
               placeables={cellPlaceables}
-              powerup={powerup}
               touchFeedback={touchFeedback}
               x={x}
               y={y}
@@ -149,58 +139,75 @@ export default function GameBoard({
         }),
       )}
 
-      {towers.map((tower) => {
-        const isSelected =
-          selectedTower?.position.x === tower.position.x &&
-          selectedTower?.position.y === tower.position.y;
-        const powerup = powerups.find(
-          (p) =>
-            p.position.x === tower.position.x &&
-            p.position.y === tower.position.y,
-        );
+      {gameStatus === 'playing' && (
+        <>
+          {towers.map((tower) => {
+            const isSelected =
+              selectedTower?.position.x === tower.position.x &&
+              selectedTower?.position.y === tower.position.y;
+            const foundPowerup = placeables.find(
+              (p) =>
+                p.category === 'powerup' &&
+                p.positions.some(
+                  (pos) =>
+                    pos.x === tower.position.x && pos.y === tower.position.y,
+                ),
+            );
+            const powerup =
+              foundPowerup && foundPowerup.category === 'powerup'
+                ? foundPowerup
+                : undefined;
 
-        return (
-          <TowerRenderer
+            return (
+              <TowerRenderer
+                cellSize={cellSize}
+                isMobile={isMobile}
+                isSelected={isSelected}
+                key={tower.id}
+                powerup={powerup}
+                tower={tower}
+              />
+            );
+          })}
+
+          {enemies.map((enemy) => (
+            <EnemyRenderer
+              cellSize={cellSize}
+              enemy={enemy}
+              isMobile={isMobile}
+              key={enemy.id}
+            />
+          ))}
+
+          {projectiles.map((projectile) => (
+            <ProjectileRenderer
+              cellSize={cellSize}
+              isMobile={isMobile}
+              key={projectile.id}
+              projectile={projectile}
+            />
+          ))}
+
+          <ParticleSystem
             cellSize={cellSize}
-            isMobile={isMobile}
-            isSelected={isSelected}
-            key={tower.id}
-            powerup={powerup}
-            tower={tower}
+            height={boardHeight}
+            particles={particles}
+            width={boardWidth}
           />
-        );
-      })}
-
-      {enemies.map((enemy) => (
-        <EnemyRenderer
-          cellSize={cellSize}
-          enemy={enemy}
-          isMobile={isMobile}
-          key={enemy.id}
-        />
-      ))}
-
-      {projectiles.map((projectile) => (
-        <ProjectileRenderer
-          cellSize={cellSize}
-          isMobile={isMobile}
-          key={projectile.id}
-          projectile={projectile}
-        />
-      ))}
-
-      <ParticleSystem
-        cellSize={cellSize}
-        height={GRID_SIZE * cellSize}
-        particles={particles}
-        width={GRID_SIZE * cellSize}
-      />
-      {showDamageNumbers && (
-        <DamageNumbers cellSize={cellSize} damageNumbers={damageNumbers} />
+          {showDamageNumbers && (
+            <DamageNumbers cellSize={cellSize} damageNumbers={damageNumbers} />
+          )}
+        </>
       )}
 
       {gameStatus !== 'playing' && (
-        <div className="absolute inset-0 bg-black/95 flex items-center justify-center p-4">
+        <div
+          className="absolute inset-0 flex items-center justify-center p-4 z-50"
+          style={{
+            backdropFilter: 'blur(8px)',
+            backgroundColor: 'rgba(0, 0, 0, 0.98)',
+          }}
+        >
           <div className="text-center">
             <h2
               className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-3 sm:mb-4 animate-pulse"
@@ -219,7 +226,7 @@ export default function GameBoard({
             </h2>
             <p className="text-cyan-400 mb-4 sm:mb-6 text-sm sm:text-base font-mono">
               {gameStatus === 'won'
-                ? `${MAX_WAVES} WAVES COMPLETED`
+                ? `${maxWaves} WAVES COMPLETED`
                 : 'DEFENSES COMPROMISED'}
             </p>
             <Button

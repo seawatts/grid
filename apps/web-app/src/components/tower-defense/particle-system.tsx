@@ -60,7 +60,11 @@ export default function ParticleSystem({
 
         for (const particle of batch) {
           const opacity = particle.life / particle.maxLife;
-          const size = 3 + (1 - opacity) * 2; // Particles grow as they fade
+          // Vary base size based on particle ID for consistent size per particle
+          // Use modulo to get a value between 0-1, then scale to 0.5-1.5 multiplier
+          const sizeMultiplier = 0.5 + ((particle.id * 0.618) % 1) * 1.0; // Golden ratio for better distribution
+          const baseSize = 2 * sizeMultiplier;
+          const size = baseSize + (1 - opacity) * 2; // Particles grow as they fade
           const x = particle.position.x * cellSize;
           const y = particle.position.y * cellSize;
 

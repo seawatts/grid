@@ -48,14 +48,14 @@ function isNewDay(lastUpdate: number): boolean {
 export function calculateEnergyRecovery(progress: PlayerProgress): number {
   const now = Date.now();
   const lastUpdate = progress.lastEnergyUpdate || now;
-  const hoursElapsed = (now - lastUpdate) / (1000 * 60 * 60); // Convert ms to hours
+  const minutesElapsed = (now - lastUpdate) / (1000 * 60); // Convert ms to minutes
 
-  if (hoursElapsed <= 0) {
+  if (minutesElapsed <= 0) {
     return 0;
   }
 
   const recoveryRate = getEnergyRecoveryRate(progress);
-  return hoursElapsed * recoveryRate;
+  return minutesElapsed * recoveryRate;
 }
 
 /**
@@ -105,6 +105,6 @@ export function getTimeUntilNextEnergy(progress: PlayerProgress): number {
 
   // Calculate how much energy is needed
   const energyNeeded = 1; // Time until next full energy point
-  const hoursNeeded = energyNeeded / recoveryRate;
-  return hoursNeeded * 60 * 60 * 1000; // Convert to milliseconds
+  const minutesNeeded = energyNeeded / recoveryRate;
+  return minutesNeeded * 60 * 1000; // Convert to milliseconds
 }

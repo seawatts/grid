@@ -9,6 +9,11 @@ export type GameMap = {
   description: string;
   starts: Position[];
   goals: Position[];
+  maxWaves: number;
+  preferredGridSize?: {
+    columns: number;
+    rows: number;
+  };
 };
 
 export const GAME_MAPS: GameMap[] = [
@@ -16,6 +21,7 @@ export const GAME_MAPS: GameMap[] = [
     description: 'Classic open battlefield',
     goals: [{ x: GRID_SIZE - 1, y: GRID_SIZE - 1 }],
     id: 'open',
+    maxWaves: 10,
     name: 'OPEN GRID',
     obstacles: [],
     starts: [{ x: 0, y: 0 }],
@@ -24,6 +30,7 @@ export const GAME_MAPS: GameMap[] = [
     description: 'Central cross obstacle',
     goals: [{ x: 6, y: 6 }],
     id: 'center-cross',
+    maxWaves: 20,
     name: 'CROSSROADS',
     obstacles: [
       // Vertical center obstacles
@@ -65,6 +72,7 @@ export const GAME_MAPS: GameMap[] = [
       { x: GRID_SIZE - 1, y: 0 },
     ],
     id: 'maze',
+    maxWaves: 30,
     name: 'LABYRINTH',
     obstacles: [
       // Create a maze-like pattern
@@ -105,6 +113,7 @@ export const GAME_MAPS: GameMap[] = [
       { x: 5, y: GRID_SIZE - 1 },
     ],
     id: 'islands',
+    maxWaves: 40,
     name: 'ISLANDS',
     obstacles: [
       // Small island clusters
@@ -134,6 +143,7 @@ export const GAME_MAPS: GameMap[] = [
     description: 'Narrow passage',
     goals: [{ x: GRID_SIZE - 1, y: 5 }],
     id: 'corridor',
+    maxWaves: 50,
     name: 'THE GAUNTLET',
     obstacles: [
       // Create a narrow corridor
@@ -156,10 +166,43 @@ export const GAME_MAPS: GameMap[] = [
   },
 ];
 
-export function validateMap(map: GameMap): boolean {
+/**
+ * Adapts map positions to fit a smaller grid by scaling proportionally
+ */
+export function adaptMapPositions(
+  positions: Position[],
+  originalWidth: number,
+  originalHeight: number,
+  targetWidth: number,
+  targetHeight: number,
+): Position[] {
+  if (originalWidth === targetWidth && originalHeight === targetHeight) {
+    return positions;
+  }
+
+  const scaleX = (targetWidth - 1) / (originalWidth - 1);
+  const scaleY = (targetHeight - 1) / (originalHeight - 1);
+
+  return positions.map((pos) => ({
+    x: Math.round(pos.x * scaleX),
+    y: Math.round(pos.y * scaleY),
+  }));
+}
+
+export function validateMap(
+  map: GameMap,
+  gridWidth = GRID_SIZE,
+  gridHeight = GRID_SIZE,
+): boolean {
   // For each start, there must be a path to at least one goal
   return map.starts.every((start) => {
-    const path = findPath(start, map.goals, map.obstacles, GRID_SIZE);
+    const path = findPath(
+      start,
+      map.goals,
+      map.obstacles,
+      gridWidth,
+      gridHeight,
+    );
     return path !== null && path.length > 0;
   });
 }

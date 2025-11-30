@@ -2,7 +2,8 @@ import { describe, expect, it } from 'bun:test';
 import { CollisionSystem } from '../engine/systems/collision-system';
 import {
   createTestEnemy,
-  createTestPowerup,
+  createTestPlaceablePowerup,
+  createTestPlaceableTrap,
   createTestProjectile,
   createTestState,
   createTestTower,
@@ -278,12 +279,13 @@ describe('Collision System Tests', () => {
       });
 
       const state = createTestState({
-        landmines: [
-          {
+        placeables: [
+          createTestPlaceableTrap({
             damage: 30,
             id: 1,
-            position: { x: 2, y: 6 },
-          },
+            positions: [{ x: 2, y: 6 }],
+            type: 'landmine',
+          }),
         ],
         spawnedEnemies: [enemy],
       });
@@ -295,8 +297,8 @@ describe('Collision System Tests', () => {
       // Enemy should take damage
       expect(result.spawnedEnemies?.[0]?.health).toBeLessThan(100);
 
-      // Landmine should be removed
-      expect(result.landmines).toHaveLength(0);
+      // Landmine should be removed (non-persistent trap)
+      expect(result.placeables?.length).toBe(0);
     });
 
     it('should kill enemy with landmine', () => {
@@ -310,14 +312,15 @@ describe('Collision System Tests', () => {
 
       const state = createTestState({
         combo: 0,
-        landmines: [
-          {
+        money: 100,
+        placeables: [
+          createTestPlaceableTrap({
             damage: 50,
             id: 1,
-            position: { x: 2, y: 6 },
-          },
+            positions: [{ x: 2, y: 6 }],
+            type: 'landmine',
+          }),
         ],
-        money: 100,
         score: 0,
         spawnedEnemies: [enemy],
       });
@@ -524,11 +527,11 @@ describe('Collision System Tests', () => {
       });
 
       const state = createTestState({
-        powerups: [
-          createTestPowerup({
+        placeables: [
+          createTestPlaceablePowerup({
             boost: 2.0, // 2x damage
             id: 1,
-            position: { x: 2, y: 5 }, // Same position as tower
+            positions: [{ x: 2, y: 5 }], // Same position as tower
           }),
         ],
         projectiles: [projectile],

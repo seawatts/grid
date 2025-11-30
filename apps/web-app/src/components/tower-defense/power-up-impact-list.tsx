@@ -15,7 +15,7 @@ interface PowerUpImpactListProps {
 }
 
 const ENTITY_LABELS: Record<ImpactEntity, string> = {
-  powerNode: 'power node',
+  powerNode: 'Node',
   tower: 'tower',
   trap: 'trap',
 };
@@ -169,10 +169,10 @@ export default function PowerUpImpactList({
                   </span>
                 </div>
                 <div className="space-y-1">
-                  {powerUps.map((powerUp) => (
+                  {powerUps.map((powerUp, index) => (
                     <div
                       className="flex items-center justify-between text-[11px] text-gray-300 bg-gray-900/60 border border-gray-800 rounded px-2 py-1"
-                      key={`${effectType}-${powerUp.id}-${powerUp.wavesRemaining ?? 'perm'}`}
+                      key={`${effectType}-${powerUp.id}-${powerUp.wavesRemaining ?? 'perm'}-${index}`}
                     >
                       <span className="font-semibold text-white">
                         {powerUp.name}

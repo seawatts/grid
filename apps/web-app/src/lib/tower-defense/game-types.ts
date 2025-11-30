@@ -31,6 +31,9 @@ export type Projectile = {
   target: Position;
   targetEnemyId?: number;
   type: TowerType;
+  penetrationRemaining: number;
+  direction: { x: number; y: number };
+  hitEnemyIds: Set<number>;
 };
 
 export type Particle = {
@@ -50,7 +53,11 @@ export type DamageNumber = {
   color: string;
 };
 
-// Legacy types (kept for backward compatibility during migration)
+// Legacy types - DEPRECATED: Use PlaceableItem instead
+// These types are kept only for migration purposes and will be removed in a future version
+/**
+ * @deprecated Use PlaceableItem with category 'powerup' instead
+ */
 export type PowerUp = {
   id: number;
   position: Position;
@@ -59,6 +66,9 @@ export type PowerUp = {
   isTowerBound: boolean;
 };
 
+/**
+ * @deprecated Use PlaceableItem with category 'trap' and type 'landmine' instead
+ */
 export type Landmine = {
   id: number;
   position: Position;
@@ -152,7 +162,9 @@ export type WavePowerUpEffectType =
   | 'addMoney'
   | 'addLives'
   | 'towerRangeMult'
-  | 'towerRangeAdd';
+  | 'towerRangeAdd'
+  | 'penetrationAdd'
+  | 'penetrationMult';
 
 export type WavePowerUpDuration = number | 'permanent'; // number = waves remaining, 'permanent' = rest of run
 export type WavePowerUpStacking = 'additive' | 'multiplicative' | 'replace';

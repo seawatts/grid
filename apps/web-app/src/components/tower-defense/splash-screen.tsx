@@ -55,7 +55,8 @@ export default function SplashScreen({
       // Not enough energy - could show error message
       return;
     }
-    const randomPowerUps = selectRandomPowerUps(3);
+    // Only show permanent power-ups before the game starts
+    const randomPowerUps = selectRandomPowerUps(3, true);
     setAvailablePowerUps(randomPowerUps);
     setShowMapSelector(false);
     setShowPowerUpSelector(true);

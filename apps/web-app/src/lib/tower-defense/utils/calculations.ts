@@ -5,7 +5,7 @@ import {
 } from '../game-constants';
 import type {
   Enemy,
-  PowerUp,
+  PlaceableItem,
   RunUpgrade,
   Tower,
   WavePowerUp,
@@ -14,7 +14,7 @@ import type {
 export interface DamageCalculationParams {
   tower: Tower;
   runUpgrade?: RunUpgrade;
-  powerup?: PowerUp;
+  powerup?: PlaceableItem & { category: 'powerup' };
   activeWavePowerUps?: WavePowerUp[];
   adjacentTowerCount: number;
 }
@@ -34,6 +34,12 @@ export function getTowerFireRateLevelMultiplier(level?: number): number {
 export function getTowerRangeLevelBonus(level?: number): number {
   const towerLevel = Math.max(1, level ?? 1);
   const bonusPerLevel = 0.25;
+  return Math.max(0, towerLevel - 1) * bonusPerLevel;
+}
+
+export function getTowerPenetrationLevelBonus(level?: number): number {
+  const towerLevel = Math.max(1, level ?? 1);
+  const bonusPerLevel = 0.5; // +0.5 penetration per level
   return Math.max(0, towerLevel - 1) * bonusPerLevel;
 }
 
@@ -269,4 +275,46 @@ export function calculateTowerRange(
   range += rangeAddBoost;
 
   return range;
+}
+
+export interface PenetrationCalculationParams {
+  tower: Tower;
+  runUpgrade?: RunUpgrade;
+  activeWavePowerUps?: WavePowerUp[];
+}
+
+export function calculatePenetration(
+  params: PenetrationCalculationParams,
+): number {
+  const { tower, activeWavePowerUps = [] } = params;
+  const stats = TOWER_STATS[tower.type];
+
+  // Start with base penetration
+  let penetration = stats.penetration;
+
+  // Apply level bonus
+  penetration += getTowerPenetrationLevelBonus(tower.level);
+
+  // Apply run upgrade penetration (if it exists in the future)
+  // For now, we'll support it in the structure but not implement it yet
+  // if (runUpgrade?.effect.type === 'penetrationAdd') {
+  //   penetration += runUpgrade.effect.value;
+  // }
+
+  // Apply wave power-up penetration additions
+  const penetrationAddBoost = aggregateWavePowerUpEffects(
+    activeWavePowerUps,
+    'penetrationAdd',
+  );
+  penetration += penetrationAddBoost;
+
+  // Apply wave power-up penetration multipliers
+  const penetrationMultBoost = aggregateWavePowerUpEffects(
+    activeWavePowerUps,
+    'penetrationMult',
+  );
+  penetration *= 1 + penetrationMultBoost;
+
+  // Round to nearest integer (penetration is discrete)
+  return Math.max(0, Math.round(penetration));
 }

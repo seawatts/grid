@@ -7,8 +7,7 @@ describe('Item Generation Timing Tests', () => {
     it('should allow generating items before wave starts', () => {
       const state = createTestState({
         isWaveActive: false,
-        landmines: [],
-        powerups: [],
+
         wave: 0,
       });
 
@@ -25,8 +24,7 @@ describe('Item Generation Timing Tests', () => {
     it('should generate items for next wave number', () => {
       const state = createTestState({
         isWaveActive: false,
-        landmines: [],
-        powerups: [],
+
         wave: 1, // Currently on wave 1
       });
 
@@ -42,8 +40,7 @@ describe('Item Generation Timing Tests', () => {
     it('should allow generating items multiple times (e.g., when upgrading between waves)', () => {
       const state = createTestState({
         isWaveActive: false,
-        landmines: [],
-        powerups: [],
+
         wave: 1,
       });
 
@@ -106,8 +103,7 @@ describe('Item Generation Timing Tests', () => {
       // Step 1: Wave complete, generate items for next wave
       let state = createTestState({
         isWaveActive: false,
-        landmines: [],
-        powerups: [],
+
         wave: 1,
       });
 

@@ -1,6 +1,7 @@
 'use client';
 
 import { Button } from '@seawatts/ui/button';
+import { useEffect, useState } from 'react';
 import {
   ENERGY_PURCHASE_AMOUNT,
   ENERGY_PURCHASE_COST,
@@ -23,16 +24,38 @@ export default function EnergyPurchase({
   canPurchase = false,
 }: EnergyPurchaseProps) {
   const updatedProgress = updateEnergy(progress);
-  const timeUntilNext = getTimeUntilNextEnergy(updatedProgress);
+  const [timeUntilNext, setTimeUntilNext] = useState(() =>
+    getTimeUntilNextEnergy(updatedProgress),
+  );
   const isFull = updatedProgress.energy >= updatedProgress.maxEnergy;
+
+  // Update countdown every second
+  useEffect(() => {
+    if (isFull) {
+      setTimeUntilNext(0);
+      return;
+    }
+
+    // Recalculate time every second to account for any changes
+    const interval = setInterval(() => {
+      const updated = updateEnergy(progress);
+      const timeLeft = getTimeUntilNextEnergy(updated);
+      setTimeUntilNext(timeLeft);
+    }, 1000);
+
+    // Set initial value
+    const initialTime = getTimeUntilNextEnergy(updatedProgress);
+    setTimeUntilNext(initialTime);
+
+    return () => clearInterval(interval);
+  }, [progress, isFull, updatedProgress]);
 
   const formatTime = (ms: number) => {
     if (ms === 0 || ms === Number.POSITIVE_INFINITY) return 'Full';
-    const minutes = Math.ceil(ms / (1000 * 60));
-    if (minutes < 60) return `${minutes}m`;
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return `${hours}h ${mins}m`;
+    const totalSeconds = Math.ceil(ms / 1000);
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
 
   return (
@@ -68,7 +91,7 @@ export default function EnergyPurchase({
         <div className="flex items-center justify-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs font-mono">
           <span className="text-gray-400">Recovery rate:</span>
           <span className="text-cyan-400">
-            {updatedProgress.energyRecoveryRate}/hr
+            {updatedProgress.energyRecoveryRate}/min
           </span>
         </div>
 

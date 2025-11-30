@@ -22,7 +22,7 @@ import {
   getAdjacentTowerCount,
   shouldResetCombo,
 } from '../../utils/calculations';
-import { getDamageNumberColor } from '../../utils/rendering';
+import { getDamageNumberColor, getEnemyColorRgb } from '../../utils/rendering';
 import type { ParticlePool } from './particle-system';
 
 export class CollisionSystem implements GameSystem {
@@ -43,9 +43,7 @@ export class CollisionSystem implements GameSystem {
       spawnedEnemies,
       projectiles,
       placeables,
-      landmines,
       towers,
-      powerups,
       runUpgrade,
       combo,
       lastKillTime,
@@ -55,7 +53,6 @@ export class CollisionSystem implements GameSystem {
     const newParticles: Particle[] = [];
     const newDamageNumbers: DamageNumber[] = [];
     let newPlaceables = [...placeables];
-    let newLandmines = [...landmines];
 
     let moneyGained = 0;
     let scoreGained = 0;
@@ -87,39 +84,16 @@ export class CollisionSystem implements GameSystem {
     damageNumberIdCounter = placeableCollisionResult.damageNumberIdCounter;
     particleIdCounter = placeableCollisionResult.particleIdCounter;
 
-    // Check legacy landmine collisions (for backward compatibility)
-    const landmineCollisionResult = this.checkLandmineCollisions(
-      newEnemies,
-      newLandmines,
-      timestamp,
-      combo + comboIncrement,
-      placeableCollisionResult.lastKillTime,
-      state,
-      damageNumberIdCounter,
-      particleIdCounter,
-    );
-
-    newEnemies = landmineCollisionResult.enemies;
-    newLandmines = landmineCollisionResult.landmines;
-    newParticles.push(...landmineCollisionResult.particles);
-    newDamageNumbers.push(...landmineCollisionResult.damageNumbers);
-    moneyGained += landmineCollisionResult.moneyGained;
-    scoreGained += landmineCollisionResult.scoreGained;
-    comboIncrement += landmineCollisionResult.comboIncrement;
-    if (landmineCollisionResult.shouldResetCombo) shouldResetComboFlag = true;
-    damageNumberIdCounter = landmineCollisionResult.damageNumberIdCounter;
-    particleIdCounter = landmineCollisionResult.particleIdCounter;
-
     // Check projectile collisions
     const projectileCollisionResult = this.checkProjectileCollisions(
       newEnemies,
       projectiles,
       towers,
-      powerups,
+      placeables,
       runUpgrade,
       timestamp,
       combo + comboIncrement,
-      landmineCollisionResult.lastKillTime,
+      placeableCollisionResult.lastKillTime,
       state,
       damageNumberIdCounter,
       particleIdCounter,
@@ -136,7 +110,6 @@ export class CollisionSystem implements GameSystem {
     particleIdCounter = projectileCollisionResult.particleIdCounter;
 
     const result: SystemUpdateResult = {
-      landmines: newLandmines,
       placeables: newPlaceables,
       projectiles: projectileCollisionResult.projectiles,
       spawnedEnemies: newEnemies,
@@ -368,118 +341,11 @@ export class CollisionSystem implements GameSystem {
     };
   }
 
-  private checkLandmineCollisions(
-    enemies: Enemy[],
-    landmines: GameState['landmines'],
-    timestamp: number,
-    combo: number,
-    lastKillTime: number,
-    state: GameState,
-    damageNumberIdCounter: number,
-    particleIdCounter: number,
-  ) {
-    let newEnemies = enemies;
-    let newLandmines = landmines;
-    const particles: Particle[] = [];
-    const damageNumbers: DamageNumber[] = [];
-    let moneyGained = 0;
-    let scoreGained = 0;
-    let comboIncrement = 0;
-    let shouldResetComboFlag = false;
-    let newLastKillTime = lastKillTime;
-
-    for (const enemy of newEnemies) {
-      const hitLandmine = newLandmines.find(
-        (mine) =>
-          Math.floor(enemy.position.x) === mine.position.x &&
-          Math.floor(enemy.position.y) === mine.position.y,
-      );
-
-      if (hitLandmine) {
-        // Remove landmine
-        newLandmines = newLandmines.filter((m) => m.id !== hitLandmine.id);
-
-        // Create explosion particles
-        if (this.particlePool) {
-          for (let i = 0; i < PARTICLE_COUNT_LANDMINE; i++) {
-            const angle = (Math.PI * 2 * i) / PARTICLE_COUNT_LANDMINE;
-            const speed = 0.08 + Math.random() * 0.05;
-            this.particlePool.spawn(
-              hitLandmine.position.x,
-              hitLandmine.position.y,
-              Math.cos(angle) * speed,
-              Math.sin(angle) * speed,
-              40,
-              'rgb(239, 68, 68)',
-            );
-          }
-        }
-
-        damageNumbers.push({
-          color: getDamageNumberColor('landmine'),
-          id: damageNumberIdCounter + damageNumbers.length,
-          life: 60,
-          position: { ...enemy.position },
-          value: Math.floor(hitLandmine.damage),
-        });
-
-        // Apply damage
-        const newHealth = enemy.health - hitLandmine.damage;
-        if (newHealth <= 0) {
-          // Enemy killed
-          newEnemies = newEnemies.filter((e) => e.id !== enemy.id);
-
-          const reward = calculateReward({
-            activeWavePowerUps: state.activeWavePowerUps,
-            baseReward: enemy.reward,
-            combo: 0, // Landmine doesn't get combo multiplier on reward
-            runUpgrade: state.runUpgrade,
-          });
-          moneyGained += reward;
-
-          // Update combo
-          if (shouldResetCombo(lastKillTime, timestamp)) {
-            shouldResetComboFlag = true;
-            comboIncrement = 1;
-          } else {
-            comboIncrement++;
-          }
-          newLastKillTime = timestamp;
-
-          // Calculate score with combo
-          const effectiveCombo = shouldResetComboFlag
-            ? 1
-            : combo + comboIncrement;
-          scoreGained += calculateScoreWithCombo(enemy.reward, effectiveCombo);
-        } else {
-          // Enemy damaged but not killed
-          newEnemies = newEnemies.map((e) =>
-            e.id === enemy.id ? { ...e, health: newHealth } : e,
-          );
-        }
-      }
-    }
-
-    return {
-      comboIncrement,
-      damageNumberIdCounter: damageNumberIdCounter + damageNumbers.length,
-      damageNumbers,
-      enemies: newEnemies,
-      landmines: newLandmines,
-      lastKillTime: newLastKillTime,
-      moneyGained,
-      particleIdCounter: particleIdCounter + particles.length,
-      particles,
-      scoreGained,
-      shouldResetCombo: shouldResetComboFlag,
-    };
-  }
-
   private checkProjectileCollisions(
     enemies: Enemy[],
     projectiles: GameState['projectiles'],
     towers: Tower[],
-    powerups: GameState['powerups'],
+    placeables: PlaceableItem[],
     runUpgrade: GameState['runUpgrade'],
     timestamp: number,
     combo: number,
@@ -496,20 +362,19 @@ export class CollisionSystem implements GameSystem {
     let comboIncrement = 0;
     let shouldResetComboFlag = false;
     let newLastKillTime = lastKillTime;
-    const projectilesProcessed = new Set<number>();
+    const updatedProjectiles: typeof projectiles = [];
+    const projectilesToRemove = new Set<number>();
 
-    // For each projectile that just reached its target
+    // Enemy hitbox radius (approximate)
+    const ENEMY_HITBOX_RADIUS = 0.4;
+
+    // For each projectile, check for collisions with enemies
     for (const projectile of projectiles) {
-      const dist = Math.sqrt(
-        (projectile.position.x - projectile.target.x) ** 2 +
-          (projectile.position.y - projectile.target.y) ** 2,
-      );
-
-      // Only process collisions for projectiles that reached their target
-      if (dist > 0.2) continue;
-
-      // Mark projectile for removal
-      projectilesProcessed.add(projectile.id);
+      // Skip projectiles that have no penetration remaining
+      if (projectile.penetrationRemaining < 0) {
+        projectilesToRemove.add(projectile.id);
+        continue;
+      }
 
       // Find the tower that shot this projectile
       const tower = towers.find(
@@ -518,149 +383,243 @@ export class CollisionSystem implements GameSystem {
           t.position.y === projectile.sourcePosition.y,
       );
 
-      if (!tower) continue;
+      if (!tower) {
+        projectilesToRemove.add(projectile.id);
+        continue;
+      }
 
-      // Find target enemy either by tracking ID or fallback to position match
-      const targetEnemy =
-        projectile.targetEnemyId !== undefined
-          ? newEnemies.find((e) => e.id === projectile.targetEnemyId)
-          : newEnemies.find(
-              (e) =>
-                Math.abs(e.position.x - projectile.target.x) < 0.5 &&
-                Math.abs(e.position.y - projectile.target.y) < 0.5,
-            );
-
-      if (!targetEnemy) continue;
-
-      // Calculate damage
+      // Calculate damage once per projectile
       const adjacentCount = getAdjacentTowerCount(tower.position, towers);
-      const powerup = powerups.find(
+      const powerup = placeables.find(
         (p) =>
-          p.position.x === tower.position.x &&
-          p.position.y === tower.position.y,
+          p.category === 'powerup' &&
+          p.positions.some(
+            (pos) => pos.x === tower.position.x && pos.y === tower.position.y,
+          ),
       );
 
       const damage = calculateDamage({
         activeWavePowerUps: state.activeWavePowerUps,
         adjacentTowerCount: adjacentCount,
-        powerup,
+        powerup:
+          powerup && powerup.category === 'powerup' ? powerup : undefined,
         runUpgrade,
         tower,
       });
 
-      // Apply damage to primary target
-      const killedEnemies: Enemy[] = [];
-      newEnemies = newEnemies.map((e) => {
-        if (e.id === targetEnemy.id) {
-          const newHealth = e.health - damage;
+      // Check for collisions with enemies along the projectile's path
+      // We check distance from projectile position to enemy position
+      let projectileHitEnemy = false;
+      let newPenetrationRemaining = projectile.penetrationRemaining;
+      const newHitEnemyIds = new Set(projectile.hitEnemyIds);
+
+      for (const enemy of newEnemies) {
+        // Skip if this enemy was already hit by this projectile
+        if (newHitEnemyIds.has(enemy.id)) continue;
+
+        // Calculate distance from projectile to enemy
+        const distToEnemy = Math.sqrt(
+          (projectile.position.x - enemy.position.x) ** 2 +
+            (projectile.position.y - enemy.position.y) ** 2,
+        );
+
+        // Check if projectile is close enough to hit enemy
+        if (distToEnemy <= ENEMY_HITBOX_RADIUS) {
+          projectileHitEnemy = true;
+          newHitEnemyIds.add(enemy.id);
+
+          // Apply damage to enemy
+          const newHealth = enemy.health - damage;
 
           damageNumbers.push({
             color: getDamageNumberColor(tower.type),
             id: damageNumberIdCounter + damageNumbers.length,
             life: 60,
-            position: { ...e.position },
+            position: { ...enemy.position },
             value: Math.floor(damage),
           });
 
           if (newHealth <= 0) {
-            killedEnemies.push(e);
-            return { ...e, health: 0 }; // Will be filtered out
-          }
+            // Enemy killed
+            newEnemies = newEnemies.filter((e) => e.id !== enemy.id);
 
-          return {
-            ...e,
-            health: newHealth,
-            slowed: tower.type === 'slow',
-          };
-        }
-        return e;
-      });
-
-      // Handle splash damage for bomb towers
-      if (tower.type === 'bomb') {
-        newEnemies = newEnemies.map((e) => {
-          if (e.id === targetEnemy.id) return e; // Already handled
-
-          const dist = Math.sqrt(
-            (e.position.x - targetEnemy.position.x) ** 2 +
-              (e.position.y - targetEnemy.position.y) ** 2,
-          );
-
-          if (dist <= 1.5) {
-            const splashDamage = damage * 0.5;
-            const newHealth = e.health - splashDamage;
-
-            damageNumbers.push({
-              color: getDamageNumberColor(tower.type),
-              id: damageNumberIdCounter + damageNumbers.length,
-              life: 60,
-              position: { ...e.position },
-              value: Math.floor(splashDamage),
-            });
-
-            if (newHealth <= 0) {
-              killedEnemies.push(e);
-              return { ...e, health: 0 };
+            // Update combo
+            if (shouldResetCombo(newLastKillTime, timestamp)) {
+              shouldResetComboFlag = true;
+              comboIncrement = 1;
+            } else {
+              comboIncrement++;
             }
+            newLastKillTime = timestamp;
 
-            return { ...e, health: newHealth };
-          }
+            // Calculate rewards
+            const reward = calculateReward({
+              activeWavePowerUps: state.activeWavePowerUps,
+              baseReward: enemy.reward,
+              combo: 0,
+              runUpgrade,
+            });
+            moneyGained += reward;
 
-          return e;
-        });
-      }
+            const effectiveCombo = shouldResetComboFlag
+              ? 1
+              : combo + comboIncrement;
+            scoreGained += calculateScoreWithCombo(
+              enemy.reward,
+              effectiveCombo,
+            );
 
-      // Process killed enemies
-      for (const enemy of killedEnemies) {
-        // Update combo
-        if (shouldResetCombo(newLastKillTime, timestamp)) {
-          shouldResetComboFlag = true;
-          comboIncrement = 1;
-        } else {
-          comboIncrement++;
-        }
-        newLastKillTime = timestamp;
-
-        // Calculate rewards
-        const reward = calculateReward({
-          activeWavePowerUps: state.activeWavePowerUps,
-          baseReward: enemy.reward,
-          combo: 0, // Reward doesn't scale with combo
-          runUpgrade,
-        });
-        moneyGained += reward;
-
-        const effectiveCombo = shouldResetComboFlag
-          ? 1
-          : combo + comboIncrement;
-        scoreGained += calculateScoreWithCombo(enemy.reward, effectiveCombo);
-
-        // Create death particles
-        if (this.particlePool) {
-          for (let i = 0; i < PARTICLE_COUNT_ENEMY_KILL; i++) {
-            const angle =
-              (Math.PI * 2 * i) / PARTICLE_COUNT_ENEMY_KILL +
-              Math.random() * 0.5;
-            const speed = 0.05 + Math.random() * 0.05;
-            this.particlePool.spawn(
-              enemy.position.x,
-              enemy.position.y,
-              Math.cos(angle) * speed,
-              Math.sin(angle) * speed,
-              60,
-              'rgb(6, 182, 212)',
+            // Create death particles with varied lifetimes and sizes
+            if (this.particlePool) {
+              const enemyColor = getEnemyColorRgb(enemy.type);
+              // Spawn more particles for more explosive feel
+              const particleCount = PARTICLE_COUNT_ENEMY_KILL * 2;
+              for (let i = 0; i < particleCount; i++) {
+                // More random spread for explosive burst
+                const angle = Math.random() * Math.PI * 2;
+                // Fast initial burst speed (0.2 to 0.4) for explosive expansion
+                const speed = 0.2 + Math.random() * 0.2;
+                // Short lifetime (10-25 frames) for quick dissipation
+                const lifetime = 10 + Math.random() * 15;
+                this.particlePool.spawn(
+                  enemy.position.x,
+                  enemy.position.y,
+                  Math.cos(angle) * speed,
+                  Math.sin(angle) * speed,
+                  lifetime,
+                  enemyColor,
+                );
+              }
+            }
+          } else {
+            // Enemy damaged but not killed
+            newEnemies = newEnemies.map((e) =>
+              e.id === enemy.id
+                ? {
+                    ...e,
+                    health: newHealth,
+                    slowed: tower.type === 'slow',
+                  }
+                : e,
             );
           }
+
+          // Decrement penetration remaining
+          newPenetrationRemaining--;
+
+          // If penetration is exhausted, stop checking for more hits
+          if (newPenetrationRemaining < 0) {
+            break;
+          }
         }
       }
 
-      // Filter out dead enemies
-      newEnemies = newEnemies.filter((e) => e.health > 0);
+      // Handle splash damage for bomb towers (only on first hit)
+      if (tower.type === 'bomb' && projectileHitEnemy) {
+        // Find the first enemy that was hit (for splash center)
+        const firstHitEnemyId = Array.from(newHitEnemyIds)[0];
+        const firstHitEnemy = newEnemies.find((e) => e.id === firstHitEnemyId);
+
+        if (firstHitEnemy) {
+          newEnemies = newEnemies.map((e) => {
+            // Skip enemies already hit by the projectile
+            if (newHitEnemyIds.has(e.id)) return e;
+
+            const dist = Math.sqrt(
+              (e.position.x - firstHitEnemy.position.x) ** 2 +
+                (e.position.y - firstHitEnemy.position.y) ** 2,
+            );
+
+            if (dist <= 1.5) {
+              const splashDamage = damage * 0.5;
+              const newHealth = e.health - splashDamage;
+
+              damageNumbers.push({
+                color: getDamageNumberColor(tower.type),
+                id: damageNumberIdCounter + damageNumbers.length,
+                life: 60,
+                position: { ...e.position },
+                value: Math.floor(splashDamage),
+              });
+
+              if (newHealth <= 0) {
+                newEnemies = newEnemies.filter((en) => en.id !== e.id);
+
+                // Update combo for splash kill
+                if (shouldResetCombo(newLastKillTime, timestamp)) {
+                  shouldResetComboFlag = true;
+                  comboIncrement = 1;
+                } else {
+                  comboIncrement++;
+                }
+                newLastKillTime = timestamp;
+
+                const reward = calculateReward({
+                  activeWavePowerUps: state.activeWavePowerUps,
+                  baseReward: e.reward,
+                  combo: 0,
+                  runUpgrade,
+                });
+                moneyGained += reward;
+
+                const effectiveCombo = shouldResetComboFlag
+                  ? 1
+                  : combo + comboIncrement;
+                scoreGained += calculateScoreWithCombo(
+                  e.reward,
+                  effectiveCombo,
+                );
+
+                // Create death particles with varied lifetimes and sizes
+                if (this.particlePool) {
+                  const enemyColor = getEnemyColorRgb(e.type);
+                  // Spawn more particles for more explosive feel
+                  const particleCount = PARTICLE_COUNT_ENEMY_KILL * 2;
+                  for (let i = 0; i < particleCount; i++) {
+                    // More random spread for explosive burst
+                    const angle = Math.random() * Math.PI * 2;
+                    // Fast initial burst speed (0.2 to 0.4) for explosive expansion
+                    const speed = 0.2 + Math.random() * 0.2;
+                    // Short lifetime (10-25 frames) for quick dissipation
+                    const lifetime = 10 + Math.random() * 15;
+                    this.particlePool.spawn(
+                      e.position.x,
+                      e.position.y,
+                      Math.cos(angle) * speed,
+                      Math.sin(angle) * speed,
+                      lifetime,
+                      enemyColor,
+                    );
+                  }
+                }
+              } else {
+                return { ...e, health: newHealth };
+              }
+            }
+
+            return e;
+          });
+        }
+      }
+
+      // Update projectile: continue if penetration remaining, remove if exhausted
+      if (newPenetrationRemaining < 0) {
+        projectilesToRemove.add(projectile.id);
+      } else {
+        updatedProjectiles.push({
+          ...projectile,
+          hitEnemyIds: newHitEnemyIds,
+          penetrationRemaining: newPenetrationRemaining,
+        });
+      }
     }
 
-    // Filter out projectiles that hit their targets
-    const remainingProjectiles = projectiles.filter(
-      (p) => !projectilesProcessed.has(p.id),
+    // Filter out dead enemies
+    newEnemies = newEnemies.filter((e) => e.health > 0);
+
+    // Keep projectiles that weren't removed
+    const remainingProjectiles = updatedProjectiles.filter(
+      (p) => !projectilesToRemove.has(p.id),
     );
 
     return {

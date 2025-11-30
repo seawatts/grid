@@ -135,7 +135,7 @@ export default function AdminDebugDrawer({
   return (
     <Drawer direction="bottom" onOpenChange={onOpenChange} open={open}>
       <DrawerContent className="border-t border-cyan-500/30 bg-black/95 text-white shadow-[0_0_45px_rgba(34,211,238,0.35)] backdrop-blur-lg [&>div:first-child]:hidden max-h-[90vh]">
-        <div className="mx-auto w-full max-w-2xl overflow-y-auto">
+        <div className="mx-auto w-full max-w-2xl">
           <DrawerHeader className="border-b border-cyan-500/30 px-4 py-4">
             <div className="flex justify-between items-center w-full">
               <DrawerTitle className="text-lg font-bold uppercase m-0 text-cyan-400">
@@ -292,10 +292,10 @@ export default function AdminDebugDrawer({
                 </h3>
                 {activeWavePowerUps.length > 0 ? (
                   <div className="space-y-2">
-                    {activeWavePowerUps.map((powerUp) => (
+                    {activeWavePowerUps.map((powerUp, index) => (
                       <div
                         className="bg-gray-900/50 p-3 rounded border border-gray-800 flex items-center justify-between"
-                        key={powerUp.id}
+                        key={`${powerUp.id}-${powerUp.wavesRemaining ?? 'permanent'}-${index}`}
                       >
                         <div className="flex-1">
                           <div className="font-bold text-white text-sm">

@@ -86,6 +86,20 @@ export function getEnemyColor(type: EnemyType): string {
   return ENEMY_STATS[type].color;
 }
 
+/**
+ * Get enemy color as RGB string for particle systems
+ * (CSS variables don't work in particle color parsing)
+ */
+export function getEnemyColorRgb(type: EnemyType): string {
+  const colorMap: Record<EnemyType, string> = {
+    basic: 'rgb(251, 146, 60)',
+    boss: 'rgb(168, 85, 247)',
+    fast: 'rgb(34, 197, 94)',
+    tank: 'rgb(239, 68, 68)',
+  };
+  return colorMap[type];
+}
+
 export function getEnemySize(type: EnemyType): number {
   return ENEMY_STATS[type].size;
 }

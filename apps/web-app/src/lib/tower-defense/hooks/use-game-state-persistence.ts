@@ -1,11 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
 import type {
   Enemy,
-  Landmine,
   PlaceableItem,
   PlayerProgress,
   Position,
-  PowerUp,
   RunUpgrade,
   Tower,
   WavePowerUp,
@@ -23,9 +21,6 @@ export interface SavedGameState {
   towers: Tower[];
   unspawnedEnemies: Enemy[]; // Keep enemies that haven't spawned yet
   placeables?: PlaceableItem[]; // Unified placeables system
-  // Legacy items (kept for backward compatibility)
-  powerups: PowerUp[];
-  landmines: Landmine[];
 
   // Game stats
   money: number;
@@ -60,9 +55,6 @@ export interface SavedGameState {
   particleIdCounter: number;
   damageNumberIdCounter: number;
   placeableIdCounter?: number;
-  // Legacy counters (kept for backward compatibility)
-  powerupIdCounter: number;
-  landmineIdCounter: number;
 }
 
 export interface SavedGameInfo {
@@ -133,9 +125,18 @@ export function useGameStatePersistence() {
           const migratedPlaceables: PlaceableItem[] = [];
           let placeableIdCounter = 0;
 
-          // Convert landmines
-          if (parsed.landmines) {
-            for (const landmine of parsed.landmines) {
+          // Convert landmines (handle legacy field during migration)
+          const legacyLandmines = (
+            parsed as unknown as {
+              landmines?: Array<{
+                id: number;
+                position: Position;
+                damage: number;
+              }>;
+            }
+          ).landmines;
+          if (legacyLandmines) {
+            for (const landmine of legacyLandmines) {
               migratedPlaceables.push({
                 category: 'trap',
                 damage: landmine.damage,
@@ -146,9 +147,20 @@ export function useGameStatePersistence() {
             }
           }
 
-          // Convert powerups
-          if (parsed.powerups) {
-            for (const powerup of parsed.powerups) {
+          // Convert powerups (handle legacy field during migration)
+          const legacyPowerups = (
+            parsed as unknown as {
+              powerups?: Array<{
+                id: number;
+                position: Position;
+                boost: number;
+                remainingWaves: number;
+                isTowerBound: boolean;
+              }>;
+            }
+          ).powerups;
+          if (legacyPowerups) {
+            for (const powerup of legacyPowerups) {
               migratedPlaceables.push({
                 boost: powerup.boost,
                 category: 'powerup',

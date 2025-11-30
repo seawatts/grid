@@ -1,14 +1,7 @@
 import AnimatedLine from '~/components/animated-line';
-import type {
-  Landmine,
-  PlaceableItem,
-  Position,
-  PowerUp,
-} from '~/lib/tower-defense/game-types';
+import type { PlaceableItem, Position } from '~/lib/tower-defense/game-types';
 import {
-  getLandmineTier,
   getPlaceableTier,
-  getPowerupTier,
   type TierInfo,
 } from '~/lib/tower-defense/utils/rendering';
 
@@ -21,9 +14,6 @@ interface GridCellProps {
   animatedPathLengths: number[];
   touchFeedback: Position | null;
   placeables?: PlaceableItem[]; // Unified placeables
-  // Legacy props (kept for backward compatibility)
-  powerup?: PowerUp;
-  landmine?: Landmine;
   hasTower: boolean;
   onClick: (x: number, y: number) => void;
 }
@@ -37,8 +27,6 @@ export default function GridCell({
   animatedPathLengths,
   touchFeedback,
   placeables = [],
-  powerup,
-  landmine,
   hasTower,
   onClick,
 }: GridCellProps) {
@@ -48,18 +36,10 @@ export default function GridCell({
   );
 
   // Get tier info for placeables (prioritize first one if multiple)
-  const placeableTier =
+  const displayTier: TierInfo | null =
     cellPlaceables.length > 0 && cellPlaceables[0]
       ? getPlaceableTier(cellPlaceables[0])
       : null;
-
-  // Legacy tier calculations (for backward compatibility)
-  const powerupTier = powerup ? getPowerupTier(powerup.boost) : null;
-  const landmineTier = landmine ? getLandmineTier(landmine.damage) : null;
-
-  // Use placeable tier if available, otherwise fall back to legacy
-  const displayTier: TierInfo | null =
-    placeableTier || powerupTier || landmineTier;
   const isPlaceablePowerup = cellPlaceables.some(
     (item) => item.category === 'powerup',
   );
@@ -277,49 +257,6 @@ export default function GridCell({
               )}
             </div>
           ) : null}
-        </div>
-      )}
-
-      {/* Legacy powerup display (backward compatibility) */}
-      {powerupTier && !displayTier && !hasTower && cell !== 'tower' && (
-        <div className="absolute inset-2 pointer-events-none">
-          <div
-            className="w-full h-full rounded-full animate-pulse"
-            style={{
-              backgroundColor: `${powerupTier.color}30`,
-              border: `2px solid ${powerupTier.color}`,
-              boxShadow: `0 0 ${powerupTier.tier * 15}px ${powerupTier.glowColor}`,
-            }}
-          >
-            <div
-              className="absolute inset-0 flex items-center justify-center font-bold text-xs"
-              style={{ color: powerupTier.color }}
-            >
-              {powerupTier.icon}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Legacy landmine display (backward compatibility) */}
-      {landmineTier && !displayTier && (
-        <div className="absolute inset-2 pointer-events-none">
-          <div
-            className="w-full h-full rounded-sm animate-pulse"
-            style={{
-              animationDuration: landmineTier.tier >= 3 ? '0.5s' : '1s',
-              backgroundColor:
-                landmineTier.tier >= 3
-                  ? 'var(--trap-bg-dark)'
-                  : 'var(--trap-bg-light)',
-              border: `2px solid ${landmineTier.color}`,
-              boxShadow: `0 0 ${landmineTier.tier * 15}px ${landmineTier.glowColor}`,
-            }}
-          >
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="w-1/2 h-1/2 rounded-full bg-red-500" />
-            </div>
-          </div>
         </div>
       )}
     </button>

@@ -13,23 +13,38 @@ export default function ProjectileRenderer({
   isMobile,
 }: ProjectileRendererProps) {
   const color = getProjectileColor(projectile.type);
-  const size = isMobile ? 4 : 6;
+  const lineLength = isMobile ? 8 : 10;
+  const lineWidth = isMobile ? 2 : 2.5;
+
+  // Calculate rotation angle from direction vector
+  const angle =
+    Math.atan2(projectile.direction.y, projectile.direction.x) *
+    (180 / Math.PI);
+
+  // Calculate center position
+  const centerX = projectile.position.x * cellSize + cellSize / 2;
+  const centerY = projectile.position.y * cellSize + cellSize / 2;
+
+  // Convert color to rgba for glow effect
+  const colorWithAlpha = color.replace('rgb', 'rgba').replace(')', ', 0.8)');
 
   return (
     <div
       className="absolute pointer-events-none"
       style={{
-        height: size,
-        left: projectile.position.x * cellSize + cellSize / 2 - size / 2,
-        top: projectile.position.y * cellSize + cellSize / 2 - size / 2,
-        width: size,
+        height: lineWidth,
+        left: centerX - lineLength / 2,
+        top: centerY - lineWidth / 2,
+        transform: `rotate(${angle}deg)`,
+        transformOrigin: 'center center',
+        width: lineLength,
       }}
     >
       <div
-        className="w-full h-full rounded-full"
+        className="w-full h-full"
         style={{
           backgroundColor: color,
-          boxShadow: `0 0 ${isMobile ? '6px' : '10px'} ${color.replace('rgb', 'rgba').replace(')', ', 0.8)')}`,
+          boxShadow: `0 0 ${isMobile ? '4px' : '6px'} ${colorWithAlpha}`,
         }}
       />
     </div>

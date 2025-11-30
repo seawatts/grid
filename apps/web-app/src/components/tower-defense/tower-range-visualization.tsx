@@ -5,7 +5,7 @@ import DamageNumbers from '~/components/tower-defense/damage-numbers';
 import TowerRenderer from '~/components/tower-defense/renderers/tower-renderer';
 import type {
   DamageNumber,
-  PowerUp,
+  PlaceableItem,
   Tower,
 } from '~/lib/tower-defense/game-types';
 import { getProjectileColor } from '~/lib/tower-defense/utils/rendering';
@@ -15,7 +15,7 @@ interface TowerRangeVisualizationProps {
   fireRateMs: number;
   tower: Tower;
   accentColor: string;
-  tilePowerup?: PowerUp;
+  tilePowerup?: PlaceableItem & { category: 'powerup' };
   damage: number; // Effective damage value to display
 }
 
@@ -205,6 +205,20 @@ function TowerRangeVisualization({
       }
     : centerPixel;
 
+  // Calculate direction from center to target for line rotation
+  const bulletDirection = currentTarget
+    ? {
+        x: currentTarget.centerX - centerPixel.x,
+        y: currentTarget.centerY - centerPixel.y,
+      }
+    : { x: 1, y: 0 };
+  const bulletAngle =
+    Math.atan2(bulletDirection.y, bulletDirection.x) * (180 / Math.PI);
+
+  // Line dimensions
+  const lineLength = CELL_SIZE * 0.25;
+  const lineWidth = 2;
+
   return (
     <div
       className="relative rounded-2xl overflow-hidden border border-cyan-500/40 bg-black/80 flex-shrink-0"
@@ -269,14 +283,16 @@ function TowerRangeVisualization({
 
       {targetCells.length > 0 && (
         <div
-          className="absolute rounded-full pointer-events-none"
+          className="absolute pointer-events-none"
           style={{
             backgroundColor: projectileColor,
-            boxShadow: `0 0 12px ${colorWithAlpha(0.9)}`,
-            height: CELL_SIZE * 0.3,
-            left: bulletPosition.x - (CELL_SIZE * 0.3) / 2,
-            top: bulletPosition.y - (CELL_SIZE * 0.3) / 2,
-            width: CELL_SIZE * 0.3,
+            boxShadow: `0 0 8px ${colorWithAlpha(0.9)}`,
+            height: lineWidth,
+            left: bulletPosition.x - lineLength / 2,
+            top: bulletPosition.y - lineWidth / 2,
+            transform: `rotate(${bulletAngle}deg)`,
+            transformOrigin: 'center center',
+            width: lineLength,
           }}
         />
       )}

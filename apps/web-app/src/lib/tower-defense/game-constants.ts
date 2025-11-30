@@ -1,7 +1,7 @@
 export const GRID_SIZE = 12;
 export const START_MONEY = 200;
 export const START_LIVES = 10;
-export const MAX_WAVES = 20;
+export const MAX_WAVES = 50;
 
 export const TOWER_STATS = {
   basic: { color: 'cyan', cost: 50, damage: 20, fireRate: 500, range: 2 },

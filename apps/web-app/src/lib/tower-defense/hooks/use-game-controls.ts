@@ -1,4 +1,6 @@
 import { useCallback } from 'react';
+import { toast } from 'sonner';
+import { TOWER_STATS } from '../constants/balance';
 import type { Tower } from '../game-types';
 import { combineBlockedPositions, findPath } from '../pathfinding';
 import { useGameStore } from '../store/game-store';
@@ -14,9 +16,11 @@ export function useGameControls() {
       const validation = canPlaceTower({
         goalPositions: store.goalPositions,
         grid: store.grid,
-        gridSize: store.grid.length,
+        gridHeight: store.gridHeight,
+        gridWidth: store.gridWidth,
         money: store.money,
         obstacles: store.obstacles,
+        placeables: store.placeables,
         startPositions: store.startPositions,
         towers: store.towers,
         towerType: store.selectedTowerType,
@@ -25,6 +29,25 @@ export function useGameControls() {
       });
 
       if (!validation.canPlace) {
+        // Provide user feedback for why placement failed
+        const reason = validation.reason || 'Cannot place tower';
+        if (reason === 'Would block all paths') {
+          toast.error('Cannot Place Tower', {
+            description:
+              'This placement would block all paths from spawn points to goal positions.',
+            duration: 3000,
+          });
+        } else if (reason === 'Not enough money') {
+          toast.error('Not Enough Money', {
+            description: `You need ${TOWER_STATS[store.selectedTowerType].cost} coins to place this tower.`,
+            duration: 3000,
+          });
+        } else {
+          toast.error('Cannot Place Tower', {
+            description: reason,
+            duration: 3000,
+          });
+        }
         return;
       }
 
@@ -46,7 +69,8 @@ export function useGameControls() {
           currentPos,
           store.goalPositions,
           allBlockedPositions,
-          store.grid.length,
+          store.gridWidth,
+          store.gridHeight,
         );
 
         if (newPath) {
@@ -62,7 +86,8 @@ export function useGameControls() {
           currentPos,
           store.goalPositions,
           allBlockedPositions,
-          store.grid.length,
+          store.gridWidth,
+          store.gridHeight,
         );
 
         if (newPath) {
@@ -117,28 +142,6 @@ export function useGameControls() {
 
       if (clickedPlaceable) {
         store.setSelectedItem(clickedPlaceable);
-        store.setSelectedTower(null);
-        store.setSelectedTowerType(null);
-        return;
-      }
-
-      // Legacy item checks (for backward compatibility)
-      const clickedPowerup = store.powerups.find(
-        (p) => p.position.x === x && p.position.y === y,
-      );
-      const clickedLandmine = store.landmines.find(
-        (l) => l.position.x === x && l.position.y === y,
-      );
-
-      if (clickedPowerup) {
-        store.setSelectedItem(clickedPowerup);
-        store.setSelectedTower(null);
-        store.setSelectedTowerType(null);
-        return;
-      }
-
-      if (clickedLandmine) {
-        store.setSelectedItem(clickedLandmine);
         store.setSelectedTower(null);
         store.setSelectedTowerType(null);
         return;

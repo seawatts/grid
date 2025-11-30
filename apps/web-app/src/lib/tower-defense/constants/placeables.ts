@@ -66,7 +66,7 @@ export const TRAP_CONFIGS: Record<TrapType, TrapConfig> = {
       const level = progress.upgrades.gridBugFrequency ?? 0;
       return UPGRADES.gridBugFrequency?.effects[level] ?? 1;
     },
-    name: 'Grid Bug',
+    name: 'Glitch',
     upgradeDamageId: 'gridBugDamage',
     upgradeFrequencyId: 'gridBugFrequency',
   },
@@ -88,7 +88,7 @@ export const TRAP_CONFIGS: Record<TrapType, TrapConfig> = {
       const level = progress.upgrades.landmineFrequency ?? 0;
       return UPGRADES.landmineFrequency?.effects[level] ?? 1;
     },
-    name: 'Landmine',
+    name: 'Trap',
     upgradeDamageId: 'landmineDamage',
     upgradeFrequencyId: 'landmineFrequency',
   },
@@ -140,7 +140,7 @@ export const POWERUP_CONFIGS: Record<PowerupType, PowerupConfig> = {
       return UPGRADES.powerNodePersistence?.effects[level] ?? 3;
     },
     getRarity: () => selectRarityByWeight(),
-    name: 'Power Node',
+    name: 'Node',
     upgradeFrequencyId: 'powerNodeFrequency',
     upgradePersistenceId: 'powerNodePersistence',
     upgradePotencyId: 'powerNodePotency',

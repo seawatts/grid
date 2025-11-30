@@ -1,6 +1,7 @@
-import type { PowerUp, Tower } from '~/lib/tower-defense/game-types';
+import type { PlaceableItem, Tower } from '~/lib/tower-defense/game-types';
+import { isPowerupItem } from '~/lib/tower-defense/game-types';
 import {
-  getPowerupTier,
+  getPlaceableTier,
   getTowerColors,
   getTowerInsetSize,
 } from '~/lib/tower-defense/utils/rendering';
@@ -10,7 +11,7 @@ interface TowerRendererProps {
   cellSize: number;
   isSelected: boolean;
   isMobile: boolean;
-  powerup?: PowerUp;
+  powerup?: PlaceableItem & { category: 'powerup' };
 }
 
 export default function TowerRenderer({
@@ -22,7 +23,8 @@ export default function TowerRenderer({
 }: TowerRendererProps) {
   const colors = getTowerColors(tower.type);
   const insetSize = getTowerInsetSize(tower.level);
-  const powerupTier = powerup ? getPowerupTier(powerup.boost) : null;
+  const powerupTier =
+    powerup && isPowerupItem(powerup) ? getPlaceableTier(powerup) : null;
 
   const left = tower.position.x * cellSize + cellSize / 4;
   const top = tower.position.y * cellSize + cellSize / 4;
