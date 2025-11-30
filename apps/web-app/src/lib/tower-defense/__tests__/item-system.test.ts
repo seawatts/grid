@@ -378,8 +378,12 @@ describe('Item System Tests', () => {
       );
 
       // With upgrade should generate more landmines
-      const noUpgradeLength = resultNoUpgrade.landmines?.length ?? 0;
-      const withUpgradeLength = resultWithUpgrade.landmines?.length ?? 0;
+      const noUpgradeLandmines =
+        resultNoUpgrade.placeables?.filter((p) => isTrapItem(p)) ?? [];
+      const withUpgradeLandmines =
+        resultWithUpgrade.placeables?.filter((p) => isTrapItem(p)) ?? [];
+      const noUpgradeLength = noUpgradeLandmines.length;
+      const withUpgradeLength = withUpgradeLandmines.length;
       expect(withUpgradeLength).toBeGreaterThanOrEqual(noUpgradeLength);
     });
 
@@ -440,8 +444,12 @@ describe('Item System Tests', () => {
       );
 
       // With upgrade should have higher damage values
-      const noUpgradeDamage = resultNoUpgrade.landmines?.[0]?.damage;
-      const withUpgradeDamage = resultWithUpgrade.landmines?.[0]?.damage;
+      const noUpgradeLandmines =
+        resultNoUpgrade.placeables?.filter((p) => isTrapItem(p)) ?? [];
+      const withUpgradeLandmines =
+        resultWithUpgrade.placeables?.filter((p) => isTrapItem(p)) ?? [];
+      const noUpgradeDamage = noUpgradeLandmines[0]?.damage;
+      const withUpgradeDamage = withUpgradeLandmines[0]?.damage;
       if (noUpgradeDamage !== undefined && withUpgradeDamage !== undefined) {
         expect(withUpgradeDamage).toBeGreaterThanOrEqual(noUpgradeDamage);
       }
