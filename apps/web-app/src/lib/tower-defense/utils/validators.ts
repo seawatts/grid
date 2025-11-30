@@ -1,12 +1,5 @@
 import { TOWER_STATS } from '../game-constants';
-import type {
-  Landmine,
-  PlaceableItem,
-  Position,
-  PowerUp,
-  Tower,
-  TowerType,
-} from '../game-types';
+import type { PlaceableItem, Position, Tower, TowerType } from '../game-types';
 import {
   combineBlockedPositions,
   findPathsForMultipleStartsAndGoals,
@@ -25,8 +18,6 @@ export interface PlacementValidationParams {
   gridWidth: number;
   gridHeight: number;
   placeables?: PlaceableItem[];
-  powerups?: PowerUp[];
-  landmines?: Landmine[];
 }
 
 export interface PlacementValidationResult {
@@ -50,8 +41,6 @@ export function canPlaceTower(
     gridWidth,
     gridHeight,
     placeables = [],
-    powerups = [],
-    landmines = [],
   } = params;
 
   const cost = TOWER_STATS[towerType].cost;
@@ -76,21 +65,8 @@ export function canPlaceTower(
     return { canPlace: false, reason: 'Cell occupied by trap' };
   }
 
-  // Check if position is occupied by a powerup
-  const hasPowerup = powerups.some(
-    (powerup) => powerup.position.x === x && powerup.position.y === y,
-  );
-  if (hasPowerup) {
-    return { canPlace: false, reason: 'Cell occupied by powerup' };
-  }
-
-  // Check if position is occupied by a landmine
-  const hasLandmine = landmines.some(
-    (landmine) => landmine.position.x === x && landmine.position.y === y,
-  );
-  if (hasLandmine) {
-    return { canPlace: false, reason: 'Cell occupied by landmine' };
-  }
+  // Powerups (power nodes) allow tower placement, so we don't need to check them here
+  // Traps are already checked above
 
   // Check if placement would block all paths
   // Include the new tower position, existing obstacles, and any placeables that block paths

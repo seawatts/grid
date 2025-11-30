@@ -20,10 +20,13 @@ describe('Projectile Tracking Integration Tests', () => {
     grid: Array(12)
       .fill(null)
       .map(() => Array(12).fill('empty')),
+    gridHeight: 12,
+    gridWidth: 12,
     isPaused: false,
     isWaveActive: true,
     lastKillTime: 0,
     lives: 10,
+    maxWaves: 20,
     money: 500,
     obstacles: [],
     particleIdCounter: 0,
@@ -391,7 +394,10 @@ describe('Projectile Tracking Integration Tests', () => {
         // Create a legacy projectile without targetEnemyId
         projectiles: [
           {
+            direction: { x: 0, y: 1 },
+            hitEnemyIds: new Set<number>(),
             id: 1,
+            penetrationRemaining: 0,
             position: { x: 2, y: 5.5 },
             sourcePosition: { x: 2, y: 5 },
             target: { x: 2, y: 6 },

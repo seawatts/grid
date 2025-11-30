@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'bun:test';
 import { ItemSystem } from '../engine/systems/item-system';
-import { createTestPowerup, createTestState } from './test-helpers';
+import { isPowerupItem, isTrapItem } from '../game-types';
+import {
+  createTestPlaceablePowerup,
+  createTestPlaceableTrap,
+  createTestState,
+} from './test-helpers';
 
 describe('Item Generation Timing Tests', () => {
   describe('Pre-wave item generation', () => {
@@ -15,10 +20,11 @@ describe('Item Generation Timing Tests', () => {
       const result = itemSystem.generateWaveItems(state, 1);
 
       // Items should be generated even when wave is not active
-      expect(result.powerups).toBeDefined();
-      expect(result.powerups?.length).toBeGreaterThan(0);
-      expect(result.landmines).toBeDefined();
-      expect(result.landmines?.length).toBeGreaterThan(0);
+      expect(result.placeables).toBeDefined();
+      const powerups = result.placeables?.filter((p) => isPowerupItem(p)) ?? [];
+      const landmines = result.placeables?.filter((p) => isTrapItem(p)) ?? [];
+      expect(powerups.length).toBeGreaterThan(0);
+      expect(landmines.length).toBeGreaterThan(0);
     });
 
     it('should generate items for next wave number', () => {
@@ -33,8 +39,10 @@ describe('Item Generation Timing Tests', () => {
       const result = itemSystem.generateWaveItems(state, 1);
 
       // Should generate items for the next wave
-      expect(result.powerups?.length).toBeGreaterThan(0);
-      expect(result.landmines?.length).toBeGreaterThan(0);
+      const powerups = result.placeables?.filter((p) => isPowerupItem(p)) ?? [];
+      const landmines = result.placeables?.filter((p) => isTrapItem(p)) ?? [];
+      expect(powerups.length).toBeGreaterThan(0);
+      expect(landmines.length).toBeGreaterThan(0);
     });
 
     it('should allow generating items multiple times (e.g., when upgrading between waves)', () => {
@@ -48,41 +56,35 @@ describe('Item Generation Timing Tests', () => {
 
       // First generation
       const result1 = itemSystem.generateWaveItems(state, 1);
-      const initialCount =
-        (result1.powerups?.length ?? 0) + (result1.landmines?.length ?? 0);
+      const initialCount = result1.placeables?.length ?? 0;
 
       // Update state with first generation
       const updatedState = {
         ...state,
-        landmines: result1.landmines || [],
-        powerups: result1.powerups || [],
+        placeables: result1.placeables || [],
       };
 
       // Second generation (e.g., after upgrading)
       const result2 = itemSystem.generateWaveItems(updatedState, 1);
-      const finalCount =
-        (result2.powerups?.length ?? 0) + (result2.landmines?.length ?? 0);
+      const finalCount = result2.placeables?.length ?? 0;
 
       // Should have at least as many items as before (existing ones preserved)
       expect(finalCount).toBeGreaterThanOrEqual(initialCount);
     });
 
     it('should clear existing items when generating for a new wave', () => {
+      const existingPowerup = createTestPlaceablePowerup({
+        id: 1,
+        positions: [{ x: 6, y: 6 }],
+      });
+      const existingLandmine = createTestPlaceableTrap({
+        damage: 30,
+        id: 1,
+        positions: [{ x: 5, y: 5 }],
+      });
       const state = createTestState({
         isWaveActive: false,
-        landmines: [
-          {
-            damage: 30,
-            id: 1,
-            position: { x: 5, y: 5 },
-          },
-        ],
-        powerups: [
-          createTestPowerup({
-            id: 1,
-            position: { x: 6, y: 6 },
-          }),
-        ],
+        placeables: [existingLandmine, existingPowerup],
         wave: 1,
       });
 
@@ -90,8 +92,12 @@ describe('Item Generation Timing Tests', () => {
       const result = itemSystem.generateWaveItems(state, 1, true); // true = clear existing
 
       // Old items should be cleared, only new items present
-      const hasOldPowerup = result.powerups?.some((p) => p.id === 1);
-      const hasOldLandmine = result.landmines?.some((l) => l.id === 1);
+      const hasOldPowerup = result.placeables?.some(
+        (p) => isPowerupItem(p) && p.id === 1,
+      );
+      const hasOldLandmine = result.placeables?.some(
+        (p) => isTrapItem(p) && p.id === 1,
+      );
 
       expect(hasOldPowerup).toBe(false);
       expect(hasOldLandmine).toBe(false);
@@ -113,13 +119,14 @@ describe('Item Generation Timing Tests', () => {
       // Apply item generation
       state = {
         ...state,
-        landmines: itemResult.landmines || [],
-        powerups: itemResult.powerups || [],
+        placeables: itemResult.placeables || [],
       };
 
       // Items should be present before wave starts
-      expect(state.powerups.length).toBeGreaterThan(0);
-      expect(state.landmines.length).toBeGreaterThan(0);
+      const powerups = state.placeables.filter((p) => isPowerupItem(p));
+      const landmines = state.placeables.filter((p) => isTrapItem(p));
+      expect(powerups.length).toBeGreaterThan(0);
+      expect(landmines.length).toBeGreaterThan(0);
       expect(state.isWaveActive).toBe(false);
 
       // Step 2: User can see items and decide when to start wave

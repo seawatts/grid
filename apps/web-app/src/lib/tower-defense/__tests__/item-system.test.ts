@@ -201,9 +201,13 @@ describe('Item System Tests', () => {
       const baseResult = itemSystem.generateWaveItems(baseState, 1);
       const upgradedResult = itemSystem.generateWaveItems(upgradedState, 1);
 
-      expect(baseResult.powerups?.[0]?.remainingWaves).toBeDefined();
-      expect(upgradedResult.powerups?.[0]?.remainingWaves ?? 0).toBeGreaterThan(
-        baseResult.powerups?.[0]?.remainingWaves ?? 0,
+      const basePowerups =
+        baseResult.placeables?.filter((p) => isPowerupItem(p)) ?? [];
+      const upgradedPowerups =
+        upgradedResult.placeables?.filter((p) => isPowerupItem(p)) ?? [];
+      expect(basePowerups[0]?.remainingWaves).toBeDefined();
+      expect(upgradedPowerups[0]?.remainingWaves ?? 0).toBeGreaterThan(
+        basePowerups[0]?.remainingWaves ?? 0,
       );
     });
 
@@ -222,8 +226,9 @@ describe('Item System Tests', () => {
       const result = itemSystem.generateWaveItems(state, 1);
 
       // No powerups should be at tower position
-      const onTower = result.powerups?.some(
-        (p) => p.position.x === 0 && p.position.y === 0,
+      const powerups = result.placeables?.filter((p) => isPowerupItem(p)) ?? [];
+      const onTower = powerups.some((p) =>
+        p.positions.some((pos) => pos.x === 0 && pos.y === 0),
       );
       expect(onTower).toBe(false);
     });
@@ -240,37 +245,39 @@ describe('Item System Tests', () => {
       const itemSystem = new ItemSystem();
       const result = itemSystem.generateWaveItems(state, 1);
 
-      // Check that existing powerup is preserved (converted to legacy format)
-      const existingPreserved = result.powerups?.some(
-        (p) => p.id === 1 && p.position.x === 5 && p.position.y === 5,
+      // Check that existing powerup is preserved
+      const powerups = result.placeables?.filter((p) => isPowerupItem(p)) ?? [];
+      const existingPreserved = powerups.some(
+        (p) =>
+          p.id === 1 && p.positions.some((pos) => pos.x === 5 && pos.y === 5),
       );
       expect(existingPreserved).toBe(true);
 
       // New powerups (id !== 1) should not overlap with existing one at (5,5)
-      const newPowerups = result.powerups?.filter((p) => p.id !== 1) ?? [];
-      const overlapping = newPowerups.some(
-        (p) => p.position.x === 5 && p.position.y === 5,
+      const newPowerups = powerups.filter((p) => p.id !== 1);
+      const overlapping = newPowerups.some((p) =>
+        p.positions.some((pos) => pos.x === 5 && pos.y === 5),
       );
       expect(overlapping).toBe(false);
     });
 
     it('should avoid cells occupied by landmines', () => {
+      const existingLandmine = createTestPlaceableTrap({
+        damage: 30,
+        id: 1,
+        positions: [{ x: 5, y: 5 }],
+      });
       const state = createTestState({
-        landmines: [
-          {
-            damage: 30,
-            id: 1,
-            position: { x: 5, y: 5 },
-          },
-        ],
+        placeables: [existingLandmine],
       });
 
       const itemSystem = new ItemSystem();
       const result = itemSystem.generateWaveItems(state, 1);
 
       // Powerups should not overlap with landmines
-      const overlapping = result.powerups?.some(
-        (p) => p.position.x === 5 && p.position.y === 5,
+      const powerups = result.placeables?.filter((p) => isPowerupItem(p)) ?? [];
+      const overlapping = powerups.some((p) =>
+        p.positions.some((pos) => pos.x === 5 && pos.y === 5),
       );
       expect(overlapping).toBe(false);
     });
@@ -283,16 +290,16 @@ describe('Item System Tests', () => {
       const itemSystem = new ItemSystem();
       const result = itemSystem.generateWaveItems(state, 1);
 
-      expect(result.landmines).toBeDefined();
-      expect(result.landmines?.length).toBeGreaterThan(0);
+      const landmines = result.placeables?.filter((p) => isTrapItem(p)) ?? [];
+      expect(landmines.length).toBeGreaterThan(0);
 
       // All landmines should have valid positions
-      if (result.landmines) {
-        for (const landmine of result.landmines) {
-          expect(landmine.position.x).toBeGreaterThanOrEqual(0);
-          expect(landmine.position.x).toBeLessThan(12);
-          expect(landmine.position.y).toBeGreaterThanOrEqual(0);
-          expect(landmine.position.y).toBeLessThan(12);
+      for (const landmine of landmines) {
+        for (const pos of landmine.positions) {
+          expect(pos.x).toBeGreaterThanOrEqual(0);
+          expect(pos.x).toBeLessThan(12);
+          expect(pos.y).toBeGreaterThanOrEqual(0);
+          expect(pos.y).toBeLessThan(12);
         }
       }
     });
@@ -303,7 +310,8 @@ describe('Item System Tests', () => {
       const itemSystem = new ItemSystem();
       const result = itemSystem.generateWaveItems(state, 1);
 
-      const ids = result.landmines?.map((l) => l.id) ?? [];
+      const landmines = result.placeables?.filter((p) => isTrapItem(p)) ?? [];
+      const ids = landmines.map((l) => l.id);
       const uniqueIds = new Set(ids);
       expect(uniqueIds.size).toBe(ids.length);
 
@@ -457,18 +465,20 @@ describe('Item System Tests', () => {
       const itemSystem = new ItemSystem();
       const result = itemSystem.generateWaveItems(state, 1);
 
-      // Existing landmine should be preserved (converted to legacy format)
-      const existingLandminePreserved = result.landmines?.some(
-        (l) => l.id === 1 && l.position.x === 5 && l.position.y === 5,
+      // Existing landmine should be preserved
+      const landmines = result.placeables?.filter((p) => isTrapItem(p)) ?? [];
+      const existingLandminePreserved = landmines.some(
+        (l) =>
+          l.id === 1 && l.positions.some((pos) => pos.x === 5 && pos.y === 5),
       );
       expect(existingLandminePreserved).toBe(true);
 
       // New landmines (id !== 1) should not overlap with existing items
-      const newLandmines = result.landmines?.filter((l) => l.id !== 1) ?? [];
-      const overlapping = newLandmines.some(
-        (l) =>
-          (l.position.x === 5 && l.position.y === 5) ||
-          (l.position.x === 6 && l.position.y === 6),
+      const newLandmines = landmines.filter((l) => l.id !== 1);
+      const overlapping = newLandmines.some((l) =>
+        l.positions.some(
+          (pos) => (pos.x === 5 && pos.y === 5) || (pos.x === 6 && pos.y === 6),
+        ),
       );
       expect(overlapping).toBe(false);
     });
@@ -481,8 +491,10 @@ describe('Item System Tests', () => {
       const itemSystem = new ItemSystem();
       const result = itemSystem.generateWaveItems(state, 1);
 
-      expect(result.powerups?.length).toBeGreaterThan(0);
-      expect(result.landmines?.length).toBeGreaterThan(0);
+      const powerups = result.placeables?.filter((p) => isPowerupItem(p)) ?? [];
+      const landmines = result.placeables?.filter((p) => isTrapItem(p)) ?? [];
+      expect(powerups.length).toBeGreaterThan(0);
+      expect(landmines.length).toBeGreaterThan(0);
     });
 
     it('should not place powerups and landmines in same cells', () => {
@@ -492,12 +504,14 @@ describe('Item System Tests', () => {
       const result = itemSystem.generateWaveItems(state, 1);
 
       // Check for overlaps
-      if (result.powerups) {
-        for (const powerup of result.powerups) {
-          const overlapping = result.landmines?.some(
-            (l) =>
-              l.position.x === powerup.position.x &&
-              l.position.y === powerup.position.y,
+      const powerups = result.placeables?.filter((p) => isPowerupItem(p)) ?? [];
+      const landmines = result.placeables?.filter((p) => isTrapItem(p)) ?? [];
+      for (const powerup of powerups) {
+        for (const powerupPos of powerup.positions) {
+          const overlapping = landmines.some((l) =>
+            l.positions.some(
+              (lPos) => lPos.x === powerupPos.x && lPos.y === powerupPos.y,
+            ),
           );
           expect(overlapping).toBe(false);
         }
@@ -569,10 +583,8 @@ describe('Item System Tests', () => {
       const result2 = itemSystem.generateWaveItems(state, 2);
 
       // Higher count should generate more items (if upgrades allow)
-      const total1 =
-        (result1.powerups?.length ?? 0) + (result1.landmines?.length ?? 0);
-      const total2 =
-        (result2.powerups?.length ?? 0) + (result2.landmines?.length ?? 0);
+      const total1 = result1.placeables?.length ?? 0;
+      const total2 = result2.placeables?.length ?? 0;
       expect(total2).toBeGreaterThanOrEqual(total1);
     });
   });
@@ -598,8 +610,7 @@ describe('Item System Tests', () => {
       const result = itemSystem.generateWaveItems(state, 1);
 
       // Should only place items in available cells
-      const totalItems =
-        (result.powerups?.length ?? 0) + (result.landmines?.length ?? 0);
+      const totalItems = result.placeables?.length ?? 0;
       expect(totalItems).toBeLessThanOrEqual(2);
     });
 
@@ -625,17 +636,21 @@ describe('Item System Tests', () => {
       const result = itemSystem.generateWaveItems(state, 1);
 
       // No items should be on start or goal
+      const powerups = result.placeables?.filter((p) => isPowerupItem(p)) ?? [];
+      const landmines = result.placeables?.filter((p) => isTrapItem(p)) ?? [];
       const onStart =
-        result.powerups?.some(
-          (p) => p.position.x === 0 && p.position.y === 6,
+        powerups.some((p) =>
+          p.positions.some((pos) => pos.x === 0 && pos.y === 6),
         ) ||
-        result.landmines?.some((l) => l.position.x === 0 && l.position.y === 6);
+        landmines.some((l) =>
+          l.positions.some((pos) => pos.x === 0 && pos.y === 6),
+        );
       const onGoal =
-        result.powerups?.some(
-          (p) => p.position.x === 11 && p.position.y === 6,
+        powerups.some((p) =>
+          p.positions.some((pos) => pos.x === 11 && pos.y === 6),
         ) ||
-        result.landmines?.some(
-          (l) => l.position.x === 11 && l.position.y === 6,
+        landmines.some((l) =>
+          l.positions.some((pos) => pos.x === 11 && pos.y === 6),
         );
 
       expect(onStart).toBe(false);

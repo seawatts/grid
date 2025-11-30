@@ -54,6 +54,16 @@ const EFFECT_METADATA: Record<
     icon: Activity,
     label: 'Fire Rate',
   },
+  penetrationAdd: {
+    format: (value) => `+${value}`,
+    icon: Target,
+    label: 'Penetration',
+  },
+  penetrationMult: {
+    format: (value) => `+${Math.round(value * 100)}%`,
+    icon: Target,
+    label: 'Penetration Multiplier',
+  },
   rewardMult: {
     format: (value) => `+${Math.round(value * 100)}%`,
     icon: Eye,

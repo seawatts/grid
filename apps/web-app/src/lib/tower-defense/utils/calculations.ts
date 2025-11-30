@@ -1,8 +1,5 @@
-import {
-  ADJACENT_TOWER_BONUS,
-  COMBO_WINDOW,
-  TOWER_STATS,
-} from '../game-constants';
+import { TOWER_STATS } from '../constants/balance';
+import { ADJACENT_TOWER_BONUS, COMBO_WINDOW } from '../game-constants';
 import type {
   Enemy,
   PlaceableItem,
@@ -289,8 +286,8 @@ export function calculatePenetration(
   const { tower, activeWavePowerUps = [] } = params;
   const stats = TOWER_STATS[tower.type];
 
-  // Start with base penetration
-  let penetration = stats.penetration;
+  // Start with base penetration (default to 0 if not present for backward compatibility)
+  let penetration = 'penetration' in stats ? stats.penetration : 0;
 
   // Apply level bonus
   penetration += getTowerPenetrationLevelBonus(tower.level);

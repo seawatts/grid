@@ -26,11 +26,14 @@ export function createTestState(overrides: Partial<GameState> = {}): GameState {
     grid: Array(12)
       .fill(null)
       .map(() => Array(12).fill('empty')),
+    gridHeight: 12,
+    gridWidth: 12,
     isMobile: true,
     isPaused: false,
     isWaveActive: false,
     lastKillTime: 0,
     lives: 10,
+    maxWaves: 20,
     money: 500,
     obstacles: [],
     particleIdCounter: 0,

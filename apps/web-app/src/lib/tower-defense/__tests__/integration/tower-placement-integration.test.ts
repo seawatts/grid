@@ -8,30 +8,31 @@ import {
 } from '../test-helpers';
 
 describe('Tower Placement Integration', () => {
-  it('should detect bug: canPlaceTower does not check for powerups', () => {
+  it('should allow placing tower on power node (powerups allow tower placement)', () => {
     const state = createTestState({
-      powerups: [
+      placeables: [
         {
           boost: 1.5,
+          category: 'powerup',
           id: 1,
           isTowerBound: false,
-          position: { x: 5, y: 5 },
+          positions: [{ x: 5, y: 5 }],
+          rarity: 'common',
           remainingWaves: 3,
+          type: 'powerNode',
         },
       ],
     });
 
-    // Try to place tower on powerup position
+    // Try to place tower on powerup position (should be allowed)
     const validation = canPlaceTower({
       goalPositions: state.goalPositions,
       grid: state.grid,
-      gridHeight: state.grid.length,
-      gridWidth: state.grid[0]?.length ?? 12,
-      landmines: state.landmines,
+      gridHeight: state.gridHeight,
+      gridWidth: state.gridWidth,
       money: 1000,
       obstacles: state.obstacles,
       placeables: state.placeables,
-      powerups: state.powerups,
       startPositions: state.startPositions,
       towers: state.towers,
       towerType: 'basic',
@@ -39,8 +40,8 @@ describe('Tower Placement Integration', () => {
       y: 5,
     });
 
-    // Should now correctly detect powerups
-    expect(validation.canPlace).toBe(false);
+    // Power nodes allow tower placement
+    expect(validation.canPlace).toBe(true);
   });
 
   it('should allow placing tower on power node', () => {
@@ -62,13 +63,11 @@ describe('Tower Placement Integration', () => {
     const validation = canPlaceTower({
       goalPositions: state.goalPositions,
       grid: state.grid,
-      gridHeight: state.grid.length,
-      gridWidth: state.grid[0]?.length ?? 12,
-      landmines: state.landmines,
+      gridHeight: state.gridHeight,
+      gridWidth: state.gridWidth,
       money: 1000,
       obstacles: state.obstacles,
       placeables: state.placeables,
-      powerups: state.powerups,
       startPositions: state.startPositions,
       towers: state.towers,
       towerType: 'basic',
@@ -80,27 +79,25 @@ describe('Tower Placement Integration', () => {
     expect(validation.canPlace).toBe(true);
   });
 
-  it('should detect bug: canPlaceTower does not check for landmines', () => {
+  it('should prevent placing tower on trap (landmine)', () => {
     const state = createTestState({
-      landmines: [
-        {
+      placeables: [
+        createTestPlaceableTrap({
           damage: 50,
           id: 1,
-          position: { x: 5, y: 5 },
-        },
+          positions: [{ x: 5, y: 5 }],
+        }),
       ],
     });
 
     const validation = canPlaceTower({
       goalPositions: state.goalPositions,
       grid: state.grid,
-      gridHeight: state.grid.length,
-      gridWidth: state.grid[0]?.length ?? 12,
-      landmines: state.landmines,
+      gridHeight: state.gridHeight,
+      gridWidth: state.gridWidth,
       money: 1000,
       obstacles: state.obstacles,
       placeables: state.placeables,
-      powerups: state.powerups,
       startPositions: state.startPositions,
       towers: state.towers,
       towerType: 'basic',
@@ -108,7 +105,7 @@ describe('Tower Placement Integration', () => {
       y: 5,
     });
 
-    // Should now correctly detect landmines
+    // Traps should block tower placement
     expect(validation.canPlace).toBe(false);
   });
 
@@ -125,13 +122,11 @@ describe('Tower Placement Integration', () => {
     const validation = canPlaceTower({
       goalPositions: state.goalPositions,
       grid: state.grid,
-      gridHeight: state.grid.length,
-      gridWidth: state.grid[0]?.length ?? 12,
-      landmines: state.landmines,
+      gridHeight: state.gridHeight,
+      gridWidth: state.gridWidth,
       money: 1000,
       obstacles: state.obstacles,
       placeables: state.placeables,
-      powerups: state.powerups,
       startPositions: state.startPositions,
       towers: state.towers,
       towerType: 'basic',
@@ -150,13 +145,11 @@ describe('Tower Placement Integration', () => {
     const validation = canPlaceTower({
       goalPositions: state.goalPositions,
       grid: state.grid,
-      gridHeight: state.grid.length,
-      gridWidth: state.grid[0]?.length ?? 12,
-      landmines: state.landmines,
+      gridHeight: state.gridHeight,
+      gridWidth: state.gridWidth,
       money: 1000,
       obstacles: state.obstacles,
       placeables: state.placeables,
-      powerups: state.powerups,
       startPositions: state.startPositions,
       towers: state.towers,
       towerType: 'basic',
@@ -182,13 +175,11 @@ describe('Tower Placement Integration', () => {
     const validation = canPlaceTower({
       goalPositions: state.goalPositions,
       grid: state.grid,
-      gridHeight: state.grid.length,
-      gridWidth: state.grid[0]?.length ?? 12,
-      landmines: state.landmines,
+      gridHeight: state.gridHeight,
+      gridWidth: state.gridWidth,
       money: 1000,
       obstacles: state.obstacles,
       placeables: state.placeables,
-      powerups: state.powerups,
       startPositions: state.startPositions,
       towers: state.towers,
       towerType: 'basic',
@@ -213,13 +204,11 @@ describe('Tower Placement Integration', () => {
     const validation = canPlaceTower({
       goalPositions: state.goalPositions,
       grid,
-      gridHeight: grid.length,
-      gridWidth: grid[0]?.length ?? 12,
-      landmines: state.landmines,
+      gridHeight: state.gridHeight,
+      gridWidth: state.gridWidth,
       money: 1000,
       obstacles: state.obstacles,
       placeables: state.placeables,
-      powerups: state.powerups,
       startPositions: state.startPositions,
       towers: state.towers,
       towerType: 'basic',
@@ -238,13 +227,11 @@ describe('Tower Placement Integration', () => {
     const validation = canPlaceTower({
       goalPositions: state.goalPositions,
       grid: state.grid,
-      gridHeight: state.grid.length,
-      gridWidth: state.grid[0]?.length ?? 12,
-      landmines: state.landmines,
+      gridHeight: state.gridHeight,
+      gridWidth: state.gridWidth,
       money: state.money,
       obstacles: state.obstacles,
       placeables: state.placeables,
-      powerups: state.powerups,
       startPositions: state.startPositions,
       towers: state.towers,
       towerType: 'basic',

@@ -20,9 +20,9 @@ describe('Item System Integration', () => {
 
     const result = engine.startWave(state);
 
-    // Should generate items
-    expect(result.powerups || []).toBeDefined();
-    expect(result.landmines || []).toBeDefined();
+    // Should generate placeables
+    expect(result.placeables).toBeDefined();
+    expect(result.placeables?.length).toBeGreaterThan(0);
   });
 
   it('should handle placeable items on paths', () => {
